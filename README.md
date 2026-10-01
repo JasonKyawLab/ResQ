@@ -109,8 +109,19 @@ not committed) and JDK 17.
 
 ```bash
 ./gradlew assembleDebug      # debug APK
-./gradlew assembleRelease    # minified + resource-shrunk release APK
+./gradlew assembleRelease    # minified + resource-shrunk release APK (unsigned until you set up signing)
+./gradlew bundleRelease      # the .aab Play Store actually wants
 ```
+
+## Play Store release signing
+
+Release builds are unsigned until a `keystore.properties` file exists
+at the project root — see `keystore.properties.example` for the exact
+`keytool` command and the fields to fill in. That file (and the `.jks`
+it points to) are gitignored; once it's in place, `bundleRelease`
+signs automatically with zero code changes. Keep the `.jks` and its
+passwords somewhere durable outside this repo — losing them means you
+can never ship an update to the same Play Store listing again.
 
 ## Deferred to v2
 
