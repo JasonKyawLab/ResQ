@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- True OLED black — mirrors ui/theme/Color.kt; pixels are off on AMOLED panels. -->
+    <color name="oled_black">#FF000000</color>
+    <color name="signal_red">#FFFF3B30</color>
+</resources>

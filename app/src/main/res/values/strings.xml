@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ResQ</string>
+
+    <string name="nav_sender">Send</string>
+    <string name="nav_receiver">Scan</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="service_notification_channel_name">ResQ radio</string>
+    <string name="service_notification_title_broadcasting">Broadcasting SOS</string>
+    <string name="service_notification_title_listening">Listening for SOS</string>
+    <string name="service_notification_title_both">Broadcasting &amp; listening</string>
+    <string name="service_notification_stop_action">Stop</string>
+</resources>
