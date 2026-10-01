@@ -1,31 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SOS in morse: dot-dot-dot / dash-dash-dash / dot-dot-dot, abstracted
+  into a 3x3 mark rather than literal Morse spacing — reads as a
+  distinct icon shape at launcher size while still legible as SOS once
+  you know to look for it. Everything sits inside the ~66dp adaptive
+  icon safe zone (x:34-74, y:30-78 of this 108dp canvas) so masking
+  (circle/squircle/rounded-square launchers) never clips it.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Outer pulse ring -->
-    <path
-        android:pathData="M54,54m-34,0a34,34 0,1 0,68 0a34,34 0,1 0,-68 0"
-        android:strokeColor="#FFFF3B30"
-        android:strokeWidth="3"
-        android:strokeAlpha="0.35"
-        android:fillColor="#00000000" />
-    <!-- Middle pulse ring -->
-    <path
-        android:pathData="M54,54m-23,0a23,23 0,1 0,46 0a23,23 0,1 0,-46 0"
-        android:strokeColor="#FFFF3B30"
-        android:strokeWidth="4"
-        android:strokeAlpha="0.65"
-        android:fillColor="#00000000" />
-    <!-- Inner pulse ring -->
-    <path
-        android:pathData="M54,54m-13,0a13,13 0,1 0,26 0a13,13 0,1 0,-26 0"
-        android:strokeColor="#FFFF3B30"
-        android:strokeWidth="4.5"
-        android:fillColor="#00000000" />
-    <!-- Beacon core -->
-    <path
-        android:pathData="M54,54m-6,0a6,6 0,1 0,12 0a6,6 0,1 0,-12 0"
-        android:fillColor="#FFFF3B30" />
+    <!-- S: three dots -->
+    <path android:pathData="M34,36m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M54,36m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M74,36m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
+    <!-- O: three dashes -->
+    <path android:pathData="M25,49h18a5,5 0,0 1,0 10h-18a5,5 0,0 1,0 -10z" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M45,49h18a5,5 0,0 1,0 10h-18a5,5 0,0 1,0 -10z" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M65,49h18a5,5 0,0 1,0 10h-18a5,5 0,0 1,0 -10z" android:fillColor="#FFFF3B30" />
+    <!-- S: three dots -->
+    <path android:pathData="M34,72m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M54,72m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M74,72m-5.5,0a5.5,5.5 0,1 0,11 0a5.5,5.5 0,1 0,-11 0" android:fillColor="#FFFF3B30" />
 </vector>
