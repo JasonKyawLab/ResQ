@@ -46,10 +46,13 @@ reasoning and the v2 extension point (concurrent multi-advertiser relay).
 ```
 app/src/main/java/com/resq/app/
 ├── core/                     # Everything with no UI dependency
-│   ├── ble/                  # Wire protocol, advertiser, scanner, GATT client/server
-│   ├── location/             # Platform LocationManager wrapper (no Play Services)
+│   ├── ble/                  # Wire protocol, advertiser, scanner, GATT client/server,
+│   │                         # BluetoothStateObserver (reacts to radio on/off)
+│   ├── location/             # Platform LocationManager wrapper (no Play Services),
+│   │                         # LocationCapability + LocationProviderObserver
 │   ├── battery/               # Battery level snapshot
-│   ├── permissions/           # Single source of truth for runtime permissions by API level
+│   ├── permissions/           # PermissionManager, tri-state PermissionStatus,
+│   │                          # ReadinessRefreshTrigger (see Technical decisions below)
 │   ├── data/
 │   │   ├── model/             # BroadcastInterval, SignalStrength — shared value types
 │   │   ├── settings/           # DataStore-backed user settings + device identity
@@ -61,8 +64,14 @@ app/src/main/java/com/resq/app/
 └── ui/
     ├── theme/                  # Pure OLED-black Compose theme
     ├── navigation/              # 3-tab NavHost
-    ├── components/               # Shared composables (toggle button, status card, badges)
+    ├── components/               # Shared composables (toggle button, status/action
+    │                             # banners, AppMark logo, badges)
     ├── sender/, receiver/, settings/   # One screen + ViewModel + UiState per package
+
+branding/                     # Non-build preview copies of the launcher icon/mark,
+                              # for visual review outside Android Studio — not referenced
+                              # by the app itself (see app/src/main/res/drawable/ic_app_mark.xml
+                              # and ic_launcher_foreground.xml for the actual assets)
 ```
 
 **Adding a fourth screen**: add a package under `ui/`, a `ResQDestination`
@@ -101,6 +110,21 @@ mesh don't silently drop each other. The codec already returns `null`
   single biggest battery lever in the app.
 - **Room for the structured SOS log, DataStore for settings** — each
   used for what it's actually good at, not a single catch-all.
+- **Reactive readiness, not polling** — `ReadinessRefreshTrigger`
+  merges real OS broadcasts (`BluetoothAdapter.ACTION_STATE_CHANGED`,
+  `LocationManager.PROVIDERS_CHANGED_ACTION`) with a tick bumped after
+  permission-dialog results, so every screen's Bluetooth/location/
+  permission status updates live — toggling Bluetooth from Quick
+  Settings while a screen is open reflects immediately, no navigate-
+  away-and-back required.
+- **Every enabled location provider gets tried, not just the first** —
+  `LocationProvider` falls through GPS → network before giving up on a
+  cycle; with no Play Services fused location to smooth over a slow or
+  signal-starved GPS cold start, trying only one provider left real
+  fixes on the table. A failed cycle also retries on a short backoff
+  (30s) rather than waiting out the full user-configured interval,
+  which could otherwise make the very first fix after starting
+  broadcast seem to never arrive.
 
 ## Versioning
 
@@ -139,6 +163,17 @@ it points to) are gitignored; once it's in place, `bundleRelease`
 signs automatically with zero code changes. Keep the `.jks` and its
 passwords somewhere durable outside this repo — losing them means you
 can never ship an update to the same Play Store listing again.
+
+## Privacy policy
+
+A draft exists (not yet checked into this repo, since it needs to be
+hosted at a stable URL for Play Console rather than live as a file
+here) covering exactly what the app's own code already guarantees: no
+network calls, nothing sent to the developer, data only ever leaving a
+device via local Bluetooth broadcast to other nearby devices running
+ResQ. Host it (GitHub Pages, or any static page) and set that URL in
+Play Console before submitting — required the moment an app requests
+location or Bluetooth permissions, regardless of what the policy says.
 
 ## Deferred to v2
 
