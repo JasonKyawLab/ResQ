@@ -10,4 +10,5 @@ data class SenderUiState(
     val batteryPercent: Int = -1,
     val bluetoothReady: Boolean = true,
     val permissionsGranted: Boolean = true,
+    val locationUnreliable: Boolean = false,
 )

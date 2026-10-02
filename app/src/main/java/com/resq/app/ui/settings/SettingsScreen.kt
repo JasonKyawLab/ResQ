@@ -24,11 +24,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.resq.app.core.data.model.BroadcastInterval
+import com.resq.app.core.permissions.PermissionStatus
+import com.resq.app.ui.components.StatusCard
+import com.resq.app.ui.components.StatusRow
+import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
 import com.resq.app.ui.theme.SurfaceCard
@@ -79,6 +84,18 @@ private fun SettingsScreen(
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
 
+        if (state.locationUnreliable) {
+            StatusCard(
+                rows = listOf(
+                    StatusRow(
+                        "Location tip",
+                        "GPS isn't available right now — you can still describe where you are in the SOS message text.",
+                        BeaconAmber,
+                    )
+                )
+            )
+        }
+
         SettingsSection(title = "Send frequency") {
             Text(
                 "How often a fresh GPS fix is fetched and re-broadcast. Longer intervals save battery.",
@@ -86,7 +103,10 @@ private fun SettingsScreen(
                 color = TextSecondary,
             )
             Spacer(Modifier.height(10.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.alpha(if (state.batterySaverEnabled) 0.35f else 1f),
+            ) {
                 BroadcastInterval.entries.forEach { interval ->
                     IntervalRow(
                         interval = interval,
@@ -95,6 +115,14 @@ private fun SettingsScreen(
                         onClick = { onIntervalSelected(interval) },
                     )
                 }
+            }
+            if (state.batterySaverEnabled) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Locked while battery saver is on — turn it off to pick a interval.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                )
             }
         }
 
@@ -121,26 +149,38 @@ private fun SettingsScreen(
         }
 
         SettingsSection(title = "Permissions") {
-            PermissionRow("Bluetooth adapter", state.bluetoothEnabled, onRequestBluetoothEnable, "Turn on")
+            PermissionRow("Bluetooth adapter", state.bluetoothAdapterStatus, onRequestBluetoothEnable, "Turn on")
             PermissionRow(
                 "Bluetooth permission",
-                state.bluetoothPermissionGranted,
+                state.bluetoothPermissionStatus,
                 onRequestRuntimePermissions,
                 "Grant",
             )
             PermissionRow(
                 "Location permission",
-                state.locationPermissionGranted,
+                state.locationPermissionStatus,
                 onRequestRuntimePermissions,
                 "Grant",
             )
             PermissionRow(
+                "Location services",
+                state.locationServiceStatus,
+                onOpenAppSettings,
+                "Turn on",
+            )
+            PermissionRow(
                 "Notifications",
-                state.notificationPermissionGranted,
+                state.notificationStatus,
                 onRequestRuntimePermissions,
                 "Grant",
             )
             Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                LegendDot(BeaconGreen, "Set")
+                LegendDot(SignalRed, "Not set")
+                LegendDot(BeaconAmber, "Unavailable")
+            }
+            Spacer(Modifier.height(10.dp))
             Text(
                 "Manage everything from the system settings page if a toggle doesn't respond.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -204,20 +244,32 @@ private fun IntervalRow(
 }
 
 @Composable
-private fun PermissionRow(label: String, granted: Boolean, onAction: () -> Unit, actionLabel: String) {
+private fun PermissionRow(
+    label: String,
+    status: PermissionStatus,
+    onAction: () -> Unit,
+    actionLabel: String,
+) {
+    val (dotColor, statusText) = when (status) {
+        PermissionStatus.GRANTED -> BeaconGreen to "Set"
+        PermissionStatus.DENIED -> SignalRed to "Not set"
+        PermissionStatus.UNAVAILABLE -> BeaconAmber to "Unavailable"
+    }
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                if (granted) "●" else "○",
-                color = if (granted) BeaconGreen else SignalRed,
-            )
-            Text(label, style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+            Text("●", color = dotColor)
+            Column {
+                Text(label, style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                if (status == PermissionStatus.UNAVAILABLE) {
+                    Text(statusText, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                }
+            }
         }
-        if (!granted) {
+        if (status == PermissionStatus.DENIED) {
             Button(
                 onClick = onAction,
                 colors = ButtonDefaults.buttonColors(containerColor = SignalRed, contentColor = TextPrimary),
@@ -226,5 +278,13 @@ private fun PermissionRow(label: String, granted: Boolean, onAction: () -> Unit,
                 Text(actionLabel)
             }
         }
+    }
+}
+
+@Composable
+private fun LegendDot(color: androidx.compose.ui.graphics.Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text("●", color = color, style = MaterialTheme.typography.labelSmall)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
     }
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.resq.app.core.ble.BleCapability
 import com.resq.app.core.ble.BleReadiness
 import com.resq.app.core.di.ServiceLocator
+import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.service.ResQForegroundService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,7 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
             batteryPercent = if (session.batteryPercent >= 0) session.batteryPercent else locator.batteryPercent(),
             bluetoothReady = BleCapability.readinessToAdvertise(application) == BleReadiness.Ready,
             permissionsGranted = PermissionManager.hasEverythingRequired(application),
+            locationUnreliable = LocationCapability.isUnreliable(application),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SenderUiState())
 

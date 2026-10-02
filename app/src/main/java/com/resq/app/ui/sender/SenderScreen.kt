@@ -24,10 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.StatusRow
+import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
 import com.resq.app.ui.theme.TextPrimary
@@ -87,6 +87,18 @@ private fun SenderScreen(
 
         if (!state.permissionsGranted || !state.bluetoothReady) {
             ReadinessBanner(state)
+        }
+
+        if (state.locationUnreliable) {
+            StatusCard(
+                rows = listOf(
+                    StatusRow(
+                        "Location tip",
+                        "GPS isn't available right now — describe where you are in the message below.",
+                        BeaconAmber,
+                    )
+                )
+            )
         }
 
         OutlinedTextField(

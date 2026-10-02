@@ -3,7 +3,9 @@ package com.resq.app.core.ble
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.pm.PackageManager
 import com.resq.app.core.permissions.PermissionManager
+import com.resq.app.core.permissions.PermissionStatus
 
 /** What ResQ can currently do with the radio on this device, checked before every BLE op. */
 sealed interface BleReadiness {
@@ -37,4 +39,21 @@ object BleCapability {
     }
 
     fun isBluetoothEnabled(context: Context): Boolean = adapter(context)?.isEnabled == true
+
+    fun hasBleHardware(context: Context): Boolean =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
+
+    /** Is the radio itself on? Distinct from whether we're allowed to use it — see [bluetoothPermissionStatus]. */
+    fun adapterStatus(context: Context): PermissionStatus = when {
+        !hasBleHardware(context) -> PermissionStatus.UNAVAILABLE
+        adapter(context) == null -> PermissionStatus.UNAVAILABLE
+        adapter(context)?.isEnabled != true -> PermissionStatus.DENIED
+        else -> PermissionStatus.GRANTED
+    }
+
+    fun bluetoothPermissionStatus(context: Context): PermissionStatus = when {
+        !hasBleHardware(context) -> PermissionStatus.UNAVAILABLE
+        PermissionManager.hasBluetoothPermissions(context) -> PermissionStatus.GRANTED
+        else -> PermissionStatus.DENIED
+    }
 }

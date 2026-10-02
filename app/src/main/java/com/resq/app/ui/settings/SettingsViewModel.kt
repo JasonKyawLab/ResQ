@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.resq.app.core.ble.BleCapability
 import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.di.ServiceLocator
+import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,10 +30,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             senderIdDisplay = "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
             sendInterval = settings.sendInterval,
             batterySaverEnabled = settings.batterySaverEnabled,
-            bluetoothEnabled = BleCapability.isBluetoothEnabled(application),
-            bluetoothPermissionGranted = PermissionManager.hasBluetoothPermissions(application),
-            locationPermissionGranted = PermissionManager.hasLocationPermissions(application),
-            notificationPermissionGranted = PermissionManager.hasNotificationPermission(application),
+            bluetoothAdapterStatus = BleCapability.adapterStatus(application),
+            bluetoothPermissionStatus = BleCapability.bluetoothPermissionStatus(application),
+            locationPermissionStatus = LocationCapability.permissionStatus(application),
+            locationServiceStatus = LocationCapability.serviceStatus(application),
+            notificationStatus = PermissionManager.notificationStatus(application),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 

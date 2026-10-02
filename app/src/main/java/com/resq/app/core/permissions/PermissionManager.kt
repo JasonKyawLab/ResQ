@@ -67,4 +67,14 @@ object PermissionManager {
     fun hasEverythingRequired(context: Context): Boolean =
         hasBluetoothPermissions(context) && hasLocationPermissions(context) &&
             hasNotificationPermission(context)
+
+    /** Pre-33 there's no runtime notification permission to grant — it's simply always on. */
+    fun notificationStatus(context: Context): PermissionStatus =
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            PermissionStatus.GRANTED
+        } else if (hasNotificationPermission(context)) {
+            PermissionStatus.GRANTED
+        } else {
+            PermissionStatus.DENIED
+        }
 }
