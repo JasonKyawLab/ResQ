@@ -2,6 +2,7 @@ package com.resq.app.ui.sender
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.resq.app.ui.components.ActionBanner
+import com.resq.app.ui.components.AppMark
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.StatusRow
@@ -83,12 +85,18 @@ private fun SenderScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        Text(
-            text = "ResQ",
-            style = MaterialTheme.typography.headlineMedium,
-            color = TextPrimary,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            AppMark()
+            Text(
+                text = "ResQ",
+                style = MaterialTheme.typography.headlineMedium,
+                color = TextPrimary,
+            )
+        }
 
         when {
             !state.permissionsGranted -> ActionBanner(

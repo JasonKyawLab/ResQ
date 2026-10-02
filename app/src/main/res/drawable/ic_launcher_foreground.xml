@@ -1,37 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  SOS in morse: dot-dot-dot / dash-dash-dash / dot-dot-dot. The dot rows
-  are deliberately offset (top row shifted left, bottom row shifted
-  right) rather than stacked in straight columns — gives the mark a
-  diagonal flow instead of reading as a plain grid.
-
-  Sized well inside the adaptive-icon safe zone on purpose, not just
-  technically inside it: Android Studio's adaptive-icon preview crops to
-  roughly the inner 66dp circle and zooms that crop to fill the frame,
-  so content sized right at the edge of "legal" ends up looking
-  cropped/edge-to-edge once that zoom is applied. This mark's bounding
-  box (radius ~24.5dp horizontal, ~18.5dp vertical from center) leaves
-  real margin inside that circle, not just inside the full 108dp canvas.
+  SOS in morse: dot-dot-dot / dash-dash-dash / dot-dot-dot, laid out as a
+  continuous three-step diagonal stagger (top row leftmost, middle row
+  centered, bottom row rightmost) rather than a plain grid — matches an
+  agreed reference spec (dot diameter : dash width : row spacing ::
+  26 : 48 : 60 in the reference's units) scaled by ~0.2306 into this
+  108dp viewport so the farthest point sits ~26dp from center, well
+  inside the ~33dp adaptive-icon safe-zone radius.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- S: three dots, shifted left -->
-    <path android:pathData="M31,40m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M48,40m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M65,40m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
-    <!-- O: three elongated dots (capsules), 16dp total width / 9dp tall /
-         4.5 radius each, 4dp gaps between them — matches the original
-         reference proportions. The straight segment below is 7dp, NOT
-         16dp: total capsule width = straight length + 2*radius (the
-         rounded end caps bulge outward past the straight segment). -->
-    <path android:pathData="M30.5,49.5h7a4.5,4.5 0,0 1,0 9h-7a4.5,4.5 0,0 1,0 -9z" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M50.5,49.5h7a4.5,4.5 0,0 1,0 9h-7a4.5,4.5 0,0 1,0 -9z" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M70.5,49.5h7a4.5,4.5 0,0 1,0 9h-7a4.5,4.5 0,0 1,0 -9z" android:fillColor="#FFFF3B30" />
-    <!-- S: three dots, shifted right -->
-    <path android:pathData="M43,68m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M60,68m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
-    <path android:pathData="M77,68m-4.5,0a4.5,4.5 0,1 0,9 0a4.5,4.5 0,1 0,-9 0" android:fillColor="#FFFF3B30" />
+    <!-- S: three dots, top row (leftmost) -->
+    <path android:pathData="M37.3,40m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M47.2,40m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M56.9,40m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
+    <!-- O: three elongated dots (capsules), middle row (centered). 11dp
+         total width / 6dp tall / 3dp radius, straight segment 5dp (=
+         total width - 2*radius: the rounded caps bulge past it). -->
+    <path android:pathData="M37.6,51.3h5a3,3 0,0 1,0 6h-5a3,3 0,0 1,0 -6z" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M51.6,51.3h5a3,3 0,0 1,0 6h-5a3,3 0,0 1,0 -6z" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M65.5,51.3h5a3,3 0,0 1,0 6h-5a3,3 0,0 1,0 -6z" android:fillColor="#FFFF3B30" />
+    <!-- S: three dots, bottom row (rightmost) -->
+    <path android:pathData="M51.4,68m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M61,68m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
+    <path android:pathData="M70.7,68m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" android:fillColor="#FFFF3B30" />
 </vector>
