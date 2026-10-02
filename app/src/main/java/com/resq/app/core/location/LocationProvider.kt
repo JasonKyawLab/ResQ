@@ -33,23 +33,41 @@ class LocationProvider(private val context: Context) {
     @SuppressLint("MissingPermission") // caller verifies PermissionManager.hasLocationPermissions first
     suspend fun requestSingleFix(): GpsFix? {
         val locationManager = context.getSystemService(LocationManager::class.java) ?: return null
-        val provider = bestAvailableProvider(locationManager) ?: return null
-
-        val fresh = withTimeoutOrNull(FRESH_FIX_TIMEOUT_MILLIS) {
-            requestCurrentLocation(locationManager, provider)
+        val providers = availableProviders(locationManager)
+        if (providers.isEmpty()) {
+            Logger.w(TAG) { "No enabled location provider on this device" }
+            return null
         }
-        if (fresh != null) return fresh.toGpsFix()
 
-        Logger.w(TAG) { "Fresh fix timed out, falling back to last known location" }
-        val lastKnown = runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+        // Try every enabled provider, not just the first: GPS alone can be slow
+        // or signal-starved (weak indoors, cold start), and a device without
+        // Play Services may only have a usable NETWORK_PROVIDER fix available.
+        // Trying GPS then falling through to network beats giving up on GPS
+        // alone and returning nothing for a full retry cycle.
+        for (provider in providers) {
+            val fresh = withTimeoutOrNull(FRESH_FIX_TIMEOUT_MILLIS) {
+                requestCurrentLocation(locationManager, provider)
+            }
+            if (fresh != null) return fresh.toGpsFix()
+            Logger.w(TAG) { "No fresh fix from $provider within ${FRESH_FIX_TIMEOUT_MILLIS}ms" }
+        }
+
+        Logger.w(TAG) { "All providers timed out, falling back to last known location" }
+        val lastKnown = providers.firstNotNullOfOrNull { provider ->
+            runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+        }
         return lastKnown?.toGpsFix()
     }
 
-    private fun bestAvailableProvider(locationManager: LocationManager): String? = when {
-        locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-        locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-        else -> null
-    }
+    /** GPS first (more accurate when it works) then network, whichever are actually enabled. */
+    private fun availableProviders(locationManager: LocationManager): List<String> = listOfNotNull(
+        LocationManager.GPS_PROVIDER.takeIf {
+            runCatching { locationManager.isProviderEnabled(it) }.getOrDefault(false)
+        },
+        LocationManager.NETWORK_PROVIDER.takeIf {
+            runCatching { locationManager.isProviderEnabled(it) }.getOrDefault(false)
+        },
+    )
 
     @SuppressLint("MissingPermission")
     private suspend fun requestCurrentLocation(
