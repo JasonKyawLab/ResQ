@@ -88,9 +88,9 @@ private fun SenderScreen(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            AppMark()
+            AppMark(size = 56.dp)
             Text(
                 text = "ResQ",
                 style = MaterialTheme.typography.headlineMedium,
