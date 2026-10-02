@@ -210,6 +210,14 @@ private fun SettingsScreen(
                 Text(state.senderIdDisplay, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Medium)
             }
         }
+
+        Text(
+            "Developed by jasonkyawlab",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextSecondary,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
