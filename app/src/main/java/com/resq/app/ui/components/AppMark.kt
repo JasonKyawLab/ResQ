@@ -25,7 +25,7 @@ import com.resq.app.R
  * backing tone or shape would show as an unintended box around it.
  */
 @Composable
-fun AppMark(modifier: Modifier = Modifier, height: Dp = 56.dp) {
+fun AppMark(modifier: Modifier = Modifier, height: Dp = 28.dp) {
     val width = height * (44f / 38f) // matches ic_app_mark's own 44x38 aspect ratio
     Image(
         painter = painterResource(R.drawable.ic_app_mark),
