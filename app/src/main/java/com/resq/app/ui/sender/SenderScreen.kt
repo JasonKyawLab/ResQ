@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -147,12 +149,27 @@ private fun SenderScreen(
             modifier = Modifier.padding(vertical = 12.dp),
         )
 
-        Text(
-            text = if (state.isBroadcasting) "Broadcasting SOS" else "Idle — tap to broadcast",
-            style = MaterialTheme.typography.titleMedium,
-            color = if (state.isBroadcasting) BeaconGreen else TextSecondary,
-            fontWeight = FontWeight.SemiBold,
-        )
+        val isAcquiringFirstFix = state.isBroadcasting && state.lastFix == null
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = when {
+                    isAcquiringFirstFix -> "Broadcasting — acquiring GPS…"
+                    state.isBroadcasting -> "Broadcasting SOS"
+                    else -> "Idle — tap to broadcast"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = if (state.isBroadcasting) BeaconGreen else TextSecondary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (isAcquiringFirstFix) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = BeaconGreen,
+                )
+            }
+        }
 
         StatusCard(
             rows = listOf(
@@ -162,8 +179,16 @@ private fun SenderScreen(
                     if (state.isBroadcasting) BeaconGreen else TextSecondary,
                 ),
                 StatusRow("Frequency", formatFrequency(state)),
-                StatusRow("Last coordinate", formatCoordinate(state)),
-                StatusRow("Last sent", formatTimestamp(state.lastBroadcastAtEpochMillis)),
+                StatusRow(
+                    "Last coordinate",
+                    formatCoordinate(state),
+                    if (isAcquiringFirstFix) BeaconAmber else null,
+                ),
+                StatusRow(
+                    "Last sent",
+                    formatTimestamp(state),
+                    if (isAcquiringFirstFix) BeaconAmber else null,
+                ),
                 StatusRow("Battery", formatBattery(state.batteryPercent)),
             ),
         )
@@ -174,13 +199,15 @@ private fun formatFrequency(state: SenderUiState): String =
     if (state.batterySaverEnabled) "${state.effectiveInterval.label} (battery saver)" else state.effectiveInterval.label
 
 private fun formatCoordinate(state: SenderUiState): String {
-    val fix = state.lastFix ?: return "—"
-    return String.format(Locale.US, "%.5f, %.5f", fix.latitude, fix.longitude)
+    val fix = state.lastFix
+    if (fix != null) return String.format(Locale.US, "%.5f, %.5f", fix.latitude, fix.longitude)
+    return if (state.isBroadcasting) "Acquiring…" else "—"
 }
 
-private fun formatTimestamp(epochMillis: Long?): String {
-    if (epochMillis == null) return "—"
-    return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
+private fun formatTimestamp(state: SenderUiState): String {
+    val epochMillis = state.lastBroadcastAtEpochMillis
+    if (epochMillis != null) return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
+    return if (state.isBroadcasting) "Acquiring…" else "—"
 }
 
 private fun formatBattery(percent: Int): String = if (percent < 0) "—" else "$percent%"
