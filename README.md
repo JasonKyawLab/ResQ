@@ -1,5 +1,7 @@
 # ResQ
 
+<img src="branding/icon-preview.svg" width="96" height="96" alt="ResQ logo — an SOS morse mark in red on black">
+
 Offline-only BLE emergency beacon for Android. No internet permission,
 no backend, no account — a phone broadcasts its location over Bluetooth
 Low Energy, nearby phones running the same app see it, and every phone
@@ -68,10 +70,11 @@ app/src/main/java/com/resq/app/
     │                             # banners, AppMark logo, badges)
     ├── sender/, receiver/, settings/   # One screen + ViewModel + UiState per package
 
-branding/                     # Non-build preview copies of the launcher icon/mark,
-                              # for visual review outside Android Studio — not referenced
-                              # by the app itself (see app/src/main/res/drawable/ic_app_mark.xml
-                              # and ic_launcher_foreground.xml for the actual assets)
+branding/                     # Non-build preview copies of the launcher icon/mark —
+                              # this README's logo, and visual review outside Android
+                              # Studio. Not referenced by the app itself; the actual
+                              # assets are app/src/main/res/drawable/ic_app_mark.xml
+                              # and ic_launcher_foreground.xml
 ```
 
 **Adding a fourth screen**: add a package under `ui/`, a `ResQDestination`
