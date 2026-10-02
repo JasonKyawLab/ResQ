@@ -11,7 +11,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.resq.app.R
-import com.resq.app.ui.theme.SurfaceCard
+import com.resq.app.ui.theme.OledBlack
 
 /**
  * The app's launcher mark (the SOS morse symbol), reusable wherever the
@@ -21,15 +21,19 @@ import com.resq.app.ui.theme.SurfaceCard
  * on API 26+, which `painterResource` doesn't reliably render, whereas
  * the plain foreground/background vector drawables are ordinary
  * VectorDrawables on every API level this app supports.
+ *
+ * Backed with [OledBlack] specifically, not a surface/card tone — this
+ * sits directly on the screen's own pure-black background, so anything
+ * lighter reads as a visible, unintended box around it.
  */
 @Composable
-fun AppMark(modifier: Modifier = Modifier, size: Dp = 32.dp) {
+fun AppMark(modifier: Modifier = Modifier, size: Dp = 44.dp) {
     Image(
         painter = painterResource(R.drawable.ic_launcher_foreground),
         contentDescription = null,
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(size / 4))
-            .background(SurfaceCard),
+            .background(OledBlack),
     )
 }
