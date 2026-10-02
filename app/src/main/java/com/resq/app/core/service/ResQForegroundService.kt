@@ -26,6 +26,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val TAG = "ResQForegroundService"
 private const val RELAY_CYCLE_INTERVAL_MILLIS = 2 * 60_000L
 private const val STALE_PRUNE_INTERVAL_MILLIS = 10 * 60_000L
+private const val FIX_RETRY_BACKOFF_MILLIS = 30_000L
 
 /**
  * The one long-running component in the app. It owns three independent
@@ -101,16 +102,21 @@ class ResQForegroundService : Service() {
                 if (fixObtained) {
                     delay(interval.millis)
                 } else {
-                    // No fix this cycle — almost always missing permission, GPS
-                    // off, or Bluetooth off. Waiting out the full interval
-                    // (which can be 15 min or an hour) before trying again
-                    // means granting the permission that was actually missing
-                    // appears to do nothing for a long time. Instead, wait for
-                    // the next *relevant change* (permission grant, GPS/BT
-                    // toggle) and retry immediately, with the interval only as
-                    // a safety-net upper bound so the loop still progresses if
-                    // nothing ever changes.
-                    withTimeoutOrNull(interval.millis) {
+                    // No fix this cycle. Two different failure shapes need two
+                    // different retry speeds:
+                    //  - Missing permission / Bluetooth or GPS off: nothing
+                    //    will change until the user acts, so react instantly
+                    //    to that action via ReadinessRefreshTrigger instead of
+                    //    waiting out the full interval.
+                    //  - GPS just hasn't locked yet (slow cold start, weak
+                    //    signal indoors): nothing "changes" to trigger that —
+                    //    it just needs another attempt soon. A full 15-minute
+                    //    or hourly interval would make the very first fix feel
+                    //    like it never arrives, so cap the wait at
+                    //    FIX_RETRY_BACKOFF_MILLIS regardless, and only fall
+                    //    back to the user's actual interval once a fix has
+                    //    been obtained at least once.
+                    withTimeoutOrNull(minOf(interval.millis, FIX_RETRY_BACKOFF_MILLIS)) {
                         ReadinessRefreshTrigger.rawChanges(applicationContext, locator).first()
                     }
                 }
