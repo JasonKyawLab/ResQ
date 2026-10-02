@@ -90,7 +90,7 @@ private fun SenderScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            AppMark(size = 56.dp)
+            AppMark()
             Text(
                 text = "ResQ",
                 style = MaterialTheme.typography.headlineMedium,
