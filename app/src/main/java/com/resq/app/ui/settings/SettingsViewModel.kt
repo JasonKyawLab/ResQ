@@ -10,7 +10,7 @@ import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -20,11 +20,10 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locator = ServiceLocator.getInstance(application)
-    private val readinessRefresh = MutableStateFlow(0)
 
     val uiState: StateFlow<SettingsUiState> = combine(
         locator.settingsRepository.settings,
-        readinessRefresh,
+        ReadinessRefreshTrigger.flow(application, locator),
     ) { settings, _ ->
         SettingsUiState(
             senderIdDisplay = "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
@@ -42,10 +41,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch { locator.settingsRepository.senderIdOrCreate() }
-    }
-
-    fun refreshReadiness() {
-        readinessRefresh.value++
     }
 
     fun onIntervalSelected(interval: BroadcastInterval) {

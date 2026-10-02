@@ -11,8 +11,8 @@ import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
+import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import com.resq.app.core.service.ResQForegroundService
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,12 +23,10 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
 
     private val locator = ServiceLocator.getInstance(application)
 
-    private val readinessRefresh = MutableStateFlow(0)
-
     val uiState: StateFlow<SenderUiState> = combine(
         locator.sessionController.state,
         locator.settingsRepository.settings,
-        readinessRefresh,
+        ReadinessRefreshTrigger.flow(application, locator),
     ) { session, settings, _ ->
         SenderUiState(
             isBroadcasting = session.isSending,
@@ -43,10 +41,6 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
             batterySaverEnabled = settings.batterySaverEnabled,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SenderUiState())
-
-    fun refreshReadiness() {
-        readinessRefresh.value++
-    }
 
     fun onMessageChanged(message: String) {
         viewModelScope.launch {

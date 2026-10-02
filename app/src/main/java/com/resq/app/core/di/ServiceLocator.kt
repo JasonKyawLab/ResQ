@@ -11,6 +11,7 @@ import com.resq.app.core.data.repository.SosLogRepository
 import com.resq.app.core.data.settings.SettingsRepository
 import com.resq.app.core.location.LocationProvider
 import com.resq.app.core.service.SessionController
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Deliberately a manual service locator, not Hilt/Dagger: this app has
@@ -42,6 +43,16 @@ class ServiceLocator private constructor(context: Context) {
     }
 
     val sessionController: SessionController by lazy { SessionController() }
+
+    /**
+     * Bumped after returning from a system permission/Bluetooth-enable
+     * dialog (see MainActivity's ActivityResultLaunchers) — there is no
+     * OS broadcast for "a runtime permission grant changed", so this is
+     * the only way the Sender/Receiver/Settings screens learn about it.
+     * Shared across all of them so granting from any one screen updates
+     * the others without needing to revisit them.
+     */
+    val permissionRefreshTick: MutableStateFlow<Int> = MutableStateFlow(0)
 
     fun batteryPercent(): Int = BatteryMonitor.currentPercent(appContext)
 

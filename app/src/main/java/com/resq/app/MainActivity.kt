@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.ui.navigation.ResQNavHost
 import com.resq.app.ui.theme.ResQTheme
@@ -18,11 +19,11 @@ class MainActivity : ComponentActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* SenderViewModel/ReceiverViewModel re-read permission state on next recomposition. */ }
+    ) { bumpPermissionRefreshTick() }
 
     private val bluetoothEnableLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { /* SettingsViewModel re-reads adapter state on next recomposition. */ }
+    ) { bumpPermissionRefreshTick() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -38,6 +39,14 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Catches returning from the system Settings app itself (e.g. the
+        // "Manage everything from system settings" link), which — unlike
+        // the launchers above — has no result callback of its own.
+        bumpPermissionRefreshTick()
     }
 
     private fun requestAllPermissions() {
@@ -62,5 +71,10 @@ class MainActivity : ComponentActivity() {
 
     private fun openLocationSettings() {
         startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+    }
+
+    private fun bumpPermissionRefreshTick() {
+        val locator = ServiceLocator.getInstance(this)
+        locator.permissionRefreshTick.value++
     }
 }

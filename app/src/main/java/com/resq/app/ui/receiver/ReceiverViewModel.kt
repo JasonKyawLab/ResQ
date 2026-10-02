@@ -11,8 +11,8 @@ import com.resq.app.core.data.db.SosLogEntity
 import com.resq.app.core.data.model.SignalStrength
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
+import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import com.resq.app.core.service.ResQForegroundService
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -24,12 +24,11 @@ import java.util.Locale
 class ReceiverViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locator = ServiceLocator.getInstance(application)
-    private val readinessRefresh = MutableStateFlow(0)
 
     val uiState: StateFlow<ReceiverUiState> = combine(
         locator.sessionController.state,
         locator.sosLogRepository.observeLog(),
-        readinessRefresh,
+        ReadinessRefreshTrigger.flow(application, locator),
     ) { session, entries, _ ->
         ReceiverUiState(
             isListening = session.isReceiving,
@@ -38,10 +37,6 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
             permissionsGranted = PermissionManager.hasEverythingRequired(application),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReceiverUiState())
-
-    fun refreshReadiness() {
-        readinessRefresh.value++
-    }
 
     fun onToggleListening() {
         val context = getApplication<Application>()
