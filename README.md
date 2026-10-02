@@ -102,6 +102,23 @@ mesh don't silently drop each other. The codec already returns `null`
 - **Room for the structured SOS log, DataStore for settings** — each
   used for what it's actually good at, not a single catch-all.
 
+## Versioning
+
+Two separate fields in `app/build.gradle.kts`, both bumped on every
+release:
+
+- `versionCode` — an integer Google Play uses internally; must
+  strictly increase on every upload. Just `+1` every time, no encoded
+  meaning — simplest scheme, nothing to get wrong.
+- `versionName` — the human-readable string users see, following
+  [semver](https://semver.org/): patch for bug-fix-only releases,
+  minor for backward-compatible features, major for breaking/large
+  changes (e.g. the v2 chat feature below).
+
+Tag the release commit to match (`git tag v1.1.0`) so any build on
+Play Store traces back to an exact commit, and record what shipped in
+[CHANGELOG.md](CHANGELOG.md).
+
 ## Building
 
 Requires a local Android SDK (`local.properties` with `sdk.dir=...`,
