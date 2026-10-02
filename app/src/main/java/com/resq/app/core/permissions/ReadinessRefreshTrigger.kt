@@ -18,9 +18,20 @@ import kotlinx.coroutines.flow.onStart
  * value so callers don't need a separate manual "refresh on launch" step.
  */
 object ReadinessRefreshTrigger {
-    fun flow(context: Context, locator: ServiceLocator): Flow<Unit> = merge(
+    /** For UI state: always has an immediate current value, then ticks on every change. */
+    fun flow(context: Context, locator: ServiceLocator): Flow<Unit> =
+        rawChanges(context, locator).onStart { emit(Unit) }
+
+    /**
+     * For "wait until something that could fix this changes" use sites
+     * (see [com.resq.app.core.service.ResQForegroundService]'s send loop)
+     * — deliberately has no immediate value, since a caller awaiting the
+     * *next* change would otherwise resolve instantly off [flow]'s
+     * synthetic first emission and never actually wait for anything.
+     */
+    fun rawChanges(context: Context, locator: ServiceLocator): Flow<Unit> = merge(
         locator.permissionRefreshTick.map { },
         BluetoothStateObserver.changes(context),
         LocationProviderObserver.changes(context),
-    ).onStart { emit(Unit) }
+    )
 }

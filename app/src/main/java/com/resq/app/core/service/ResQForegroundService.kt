@@ -10,6 +10,8 @@ import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.SosRecord
 import com.resq.app.core.di.ServiceLocator
+import com.resq.app.core.permissions.PermissionManager
+import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import com.resq.app.core.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "ResQForegroundService"
 private const val RELAY_CYCLE_INTERVAL_MILLIS = 2 * 60_000L
@@ -93,9 +96,24 @@ class ResQForegroundService : Service() {
 
         sendJob = scope.launch {
             while (true) {
-                broadcastOwnFix()
+                val fixObtained = broadcastOwnFix()
                 val interval = locator.settingsRepository.effectiveSendInterval()
-                delay(interval.millis)
+                if (fixObtained) {
+                    delay(interval.millis)
+                } else {
+                    // No fix this cycle — almost always missing permission, GPS
+                    // off, or Bluetooth off. Waiting out the full interval
+                    // (which can be 15 min or an hour) before trying again
+                    // means granting the permission that was actually missing
+                    // appears to do nothing for a long time. Instead, wait for
+                    // the next *relevant change* (permission grant, GPS/BT
+                    // toggle) and retry immediately, with the interval only as
+                    // a safety-net upper bound so the loop still progresses if
+                    // nothing ever changes.
+                    withTimeoutOrNull(interval.millis) {
+                        ReadinessRefreshTrigger.rawChanges(applicationContext, locator).first()
+                    }
+                }
             }
         }
     }
@@ -110,11 +128,16 @@ class ResQForegroundService : Service() {
         }
     }
 
-    private suspend fun broadcastOwnFix() {
+    /** @return true if a fix was obtained and broadcast, false if this cycle produced nothing. */
+    private suspend fun broadcastOwnFix(): Boolean {
+        if (!PermissionManager.hasLocationPermissions(this)) {
+            Logger.w(TAG) { "Location permission missing this cycle" }
+            return false
+        }
         val fix = locator.locationProvider.requestSingleFix()
         if (fix == null) {
             Logger.w(TAG) { "No GPS fix available this cycle" }
-            return
+            return false
         }
         val senderId = locator.settingsRepository.senderIdOrCreate()
         val draft = locator.settingsRepository.settings.first().sosMessageDraft
@@ -145,6 +168,7 @@ class ResQForegroundService : Service() {
             )
         )
         locator.sessionController.recordFix(fix)
+        return true
     }
 
     // --- Receiving / relay ----------------------------------------------
