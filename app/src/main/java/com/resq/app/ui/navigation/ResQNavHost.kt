@@ -33,6 +33,7 @@ fun ResQNavHost(
     onRequestPermissions: () -> Unit,
     onRequestBluetoothEnable: () -> Unit,
     onOpenAppSettings: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
 ) {
     val navController = rememberNavController()
 
@@ -73,16 +74,23 @@ fun ResQNavHost(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(ResQDestination.SENDER.route) {
-                SenderRoute(onRequestPermissions = onRequestPermissions)
+                SenderRoute(
+                    onRequestPermissions = onRequestPermissions,
+                    onRequestBluetoothEnable = onRequestBluetoothEnable,
+                )
             }
             composable(ResQDestination.RECEIVER.route) {
-                ReceiverRoute(onRequestPermissions = onRequestPermissions)
+                ReceiverRoute(
+                    onRequestPermissions = onRequestPermissions,
+                    onRequestBluetoothEnable = onRequestBluetoothEnable,
+                )
             }
             composable(ResQDestination.SETTINGS.route) {
                 SettingsRoute(
                     onRequestBluetoothEnable = onRequestBluetoothEnable,
                     onRequestRuntimePermissions = onRequestPermissions,
                     onOpenAppSettings = onOpenAppSettings,
+                    onOpenLocationSettings = onOpenLocationSettings,
                 )
             }
         }

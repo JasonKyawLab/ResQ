@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.resq.app.core.ble.BleCapability
 import com.resq.app.core.ble.BleReadiness
+import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
@@ -38,6 +39,8 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
             bluetoothReady = BleCapability.readinessToAdvertise(application) == BleReadiness.Ready,
             permissionsGranted = PermissionManager.hasEverythingRequired(application),
             locationUnreliable = LocationCapability.isUnreliable(application),
+            effectiveInterval = if (settings.batterySaverEnabled) BroadcastInterval.BATTERY_SAVER else settings.sendInterval,
+            batterySaverEnabled = settings.batterySaverEnabled,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SenderUiState())
 

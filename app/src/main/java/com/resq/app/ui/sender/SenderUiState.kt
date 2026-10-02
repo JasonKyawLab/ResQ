@@ -1,5 +1,6 @@
 package com.resq.app.ui.sender
 
+import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.location.GpsFix
 
 data class SenderUiState(
@@ -11,4 +12,6 @@ data class SenderUiState(
     val bluetoothReady: Boolean = true,
     val permissionsGranted: Boolean = true,
     val locationUnreliable: Boolean = false,
+    val effectiveInterval: BroadcastInterval = BroadcastInterval.DEFAULT,
+    val batterySaverEnabled: Boolean = false,
 )

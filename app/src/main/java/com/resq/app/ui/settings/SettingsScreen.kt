@@ -45,6 +45,7 @@ fun SettingsRoute(
     onRequestBluetoothEnable: () -> Unit,
     onRequestRuntimePermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -62,6 +63,7 @@ fun SettingsRoute(
         onRequestBluetoothEnable = onRequestBluetoothEnable,
         onRequestRuntimePermissions = onRequestRuntimePermissions,
         onOpenAppSettings = onOpenAppSettings,
+        onOpenLocationSettings = onOpenLocationSettings,
         modifier = modifier,
     )
 }
@@ -74,6 +76,7 @@ private fun SettingsScreen(
     onRequestBluetoothEnable: () -> Unit,
     onRequestRuntimePermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -94,6 +97,28 @@ private fun SettingsScreen(
                     )
                 )
             )
+        }
+
+        SettingsSection(title = "Battery saver") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Minimal UI, longest interval", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                    Text(
+                        "Forces hourly broadcasts regardless of the setting below.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                    )
+                }
+                Switch(
+                    checked = state.batterySaverEnabled,
+                    onCheckedChange = onBatterySaverToggled,
+                    colors = SwitchDefaults.colors(checkedTrackColor = SignalRed),
+                )
+            }
         }
 
         SettingsSection(title = "Send frequency") {
@@ -126,33 +151,23 @@ private fun SettingsScreen(
             }
         }
 
-        SettingsSection(title = "Battery saver") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("Minimal UI, longest interval", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
-                    Text(
-                        "Forces hourly broadcasts regardless of the setting above.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                    )
-                }
-                Switch(
-                    checked = state.batterySaverEnabled,
-                    onCheckedChange = onBatterySaverToggled,
-                    colors = SwitchDefaults.colors(checkedTrackColor = SignalRed),
-                )
-            }
-        }
-
         SettingsSection(title = "Permissions") {
             PermissionRow("Bluetooth adapter", state.bluetoothAdapterStatus, onRequestBluetoothEnable, "Turn on")
             PermissionRow(
-                "Bluetooth permission",
-                state.bluetoothPermissionStatus,
+                "Bluetooth — scan",
+                state.bluetoothScanStatus,
+                onRequestRuntimePermissions,
+                "Grant",
+            )
+            PermissionRow(
+                "Bluetooth — advertise",
+                state.bluetoothAdvertiseStatus,
+                onRequestRuntimePermissions,
+                "Grant",
+            )
+            PermissionRow(
+                "Bluetooth — connect",
+                state.bluetoothConnectStatus,
                 onRequestRuntimePermissions,
                 "Grant",
             )
@@ -165,7 +180,7 @@ private fun SettingsScreen(
             PermissionRow(
                 "Location services",
                 state.locationServiceStatus,
-                onOpenAppSettings,
+                onOpenLocationSettings,
                 "Turn on",
             )
             PermissionRow(

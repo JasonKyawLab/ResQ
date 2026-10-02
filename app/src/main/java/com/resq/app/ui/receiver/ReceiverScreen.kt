@@ -27,9 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.resq.app.ui.components.ActionBanner
 import com.resq.app.ui.components.SignalBadge
-import com.resq.app.ui.components.StatusCard
-import com.resq.app.ui.components.StatusRow
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
 import com.resq.app.ui.theme.SurfaceCard
@@ -39,6 +38,7 @@ import com.resq.app.ui.theme.TextSecondary
 @Composable
 fun ReceiverRoute(
     onRequestPermissions: () -> Unit,
+    onRequestBluetoothEnable: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -51,6 +51,8 @@ fun ReceiverRoute(
 
     ReceiverScreen(
         state = uiState,
+        onRequestPermissions = onRequestPermissions,
+        onRequestBluetoothEnable = onRequestBluetoothEnable,
         onToggleListening = {
             if (!uiState.permissionsGranted) onRequestPermissions() else viewModel.onToggleListening()
         },
@@ -61,6 +63,8 @@ fun ReceiverRoute(
 @Composable
 private fun ReceiverScreen(
     state: ReceiverUiState,
+    onRequestPermissions: () -> Unit,
+    onRequestBluetoothEnable: () -> Unit,
     onToggleListening: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -91,18 +95,23 @@ private fun ReceiverScreen(
             color = if (state.isListening) BeaconGreen else TextSecondary,
         )
 
-        if (!state.permissionsGranted || !state.bluetoothReady) {
-            Spacer(Modifier.height(12.dp))
-            StatusCard(
-                rows = listOf(
-                    StatusRow(
-                        "Action needed",
-                        if (!state.permissionsGranted) "Bluetooth & location permissions are needed."
-                        else "Turn on Bluetooth to scan.",
-                        SignalRed,
-                    )
+        when {
+            !state.permissionsGranted -> {
+                Spacer(Modifier.height(12.dp))
+                ActionBanner(
+                    message = "Bluetooth & location permissions are needed to scan.",
+                    actionLabel = "Grant",
+                    onAction = onRequestPermissions,
                 )
-            )
+            }
+            !state.bluetoothReady -> {
+                Spacer(Modifier.height(12.dp))
+                ActionBanner(
+                    message = "Bluetooth is off — turn it on to scan.",
+                    actionLabel = "Turn on",
+                    onAction = onRequestBluetoothEnable,
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))

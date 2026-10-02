@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
                     onRequestPermissions = ::requestAllPermissions,
                     onRequestBluetoothEnable = ::requestBluetoothEnable,
                     onOpenAppSettings = ::openAppSettings,
+                    onOpenLocationSettings = ::openLocationSettings,
                 )
             }
         }
@@ -57,5 +58,9 @@ class MainActivity : ComponentActivity() {
         startActivity(
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
         )
+    }
+
+    private fun openLocationSettings() {
+        startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
     }
 }

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.resq.app.ui.components.ActionBanner
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.StatusRow
@@ -39,6 +40,7 @@ import java.util.Locale
 @Composable
 fun SenderRoute(
     onRequestPermissions: () -> Unit,
+    onRequestBluetoothEnable: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -52,9 +54,13 @@ fun SenderRoute(
     SenderScreen(
         state = uiState,
         onMessageChanged = viewModel::onMessageChanged,
+        onRequestPermissions = onRequestPermissions,
+        onRequestBluetoothEnable = onRequestBluetoothEnable,
         onToggleBroadcast = {
             if (!uiState.permissionsGranted) {
                 onRequestPermissions()
+            } else if (!uiState.bluetoothReady) {
+                onRequestBluetoothEnable()
             } else {
                 viewModel.onToggleBroadcast()
             }
@@ -67,6 +73,8 @@ fun SenderRoute(
 private fun SenderScreen(
     state: SenderUiState,
     onMessageChanged: (String) -> Unit,
+    onRequestPermissions: () -> Unit,
+    onRequestBluetoothEnable: () -> Unit,
     onToggleBroadcast: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -85,8 +93,17 @@ private fun SenderScreen(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        if (!state.permissionsGranted || !state.bluetoothReady) {
-            ReadinessBanner(state)
+        when {
+            !state.permissionsGranted -> ActionBanner(
+                message = "Bluetooth & location permissions are needed to broadcast.",
+                actionLabel = "Grant",
+                onAction = onRequestPermissions,
+            )
+            !state.bluetoothReady -> ActionBanner(
+                message = "Bluetooth is off — turn it on to broadcast.",
+                actionLabel = "Turn on",
+                onAction = onRequestBluetoothEnable,
+            )
         }
 
         if (state.locationUnreliable) {
@@ -139,6 +156,7 @@ private fun SenderScreen(
                     if (state.isBroadcasting) "Broadcasting" else "Idle",
                     if (state.isBroadcasting) BeaconGreen else TextSecondary,
                 ),
+                StatusRow("Frequency", formatFrequency(state)),
                 StatusRow("Last coordinate", formatCoordinate(state)),
                 StatusRow("Last sent", formatTimestamp(state.lastBroadcastAtEpochMillis)),
                 StatusRow("Battery", formatBattery(state.batteryPercent)),
@@ -147,16 +165,8 @@ private fun SenderScreen(
     }
 }
 
-@Composable
-private fun ReadinessBanner(state: SenderUiState) {
-    val message = when {
-        !state.permissionsGranted -> "Bluetooth & location permissions are needed to broadcast."
-        !state.bluetoothReady -> "Turn on Bluetooth to broadcast."
-        else -> null
-    } ?: return
-
-    StatusCard(rows = listOf(StatusRow("Action needed", message, SignalRed)))
-}
+private fun formatFrequency(state: SenderUiState): String =
+    if (state.batterySaverEnabled) "${state.effectiveInterval.label} (battery saver)" else state.effectiveInterval.label
 
 private fun formatCoordinate(state: SenderUiState): String {
     val fix = state.lastFix ?: return "—"
