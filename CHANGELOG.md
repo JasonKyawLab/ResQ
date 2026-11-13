@@ -33,7 +33,14 @@ that build is actually published.
 - Custom SOS-morse-mark launcher icon and in-app logo mark.
 - Privacy policy draft covering the app's on-device-only data handling.
 
+### Changed
+- compileSdk/targetSdk raised from 35 to 36: Google Play requires new
+  apps and updates to target Android 16 (API 36) from Aug 31, 2026.
+
 ### Fixed
+- Crash when stopping the foreground service on Android 6.0 (API 23):
+  `stopForeground(int)` only exists from API 24; now uses
+  `ServiceCompat.stopForeground`. Found by release lint (NewApi).
 - Settings screen overflow that made the Permissions section
   unreachable once it grew past screen height.
 - Permission-row buttons clipping off-screen on long labels.

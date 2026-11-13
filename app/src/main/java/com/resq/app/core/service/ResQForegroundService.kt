@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.resq.app.core.ble.BeaconFlags
 import com.resq.app.core.ble.BeaconPayload
@@ -272,7 +273,7 @@ class ResQForegroundService : Service() {
 
     private fun stopIfIdle() {
         if (sendJob?.isActive != true && scanJob?.isActive != true) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
     }
