@@ -31,13 +31,26 @@ that build is actually published.
 - Release signing and `.aab` build pipeline, opt-in via a gitignored
   `keystore.properties`.
 - Custom SOS-morse-mark launcher icon and in-app logo mark.
-- Privacy policy draft covering the app's on-device-only data handling.
+- Privacy policy covering the app's on-device-only data handling, hosted at
+  https://resq-privacy.pages.dev.
+- "My location" setting (room / floor / building): saved once, sent ahead
+  of every SOS message so it still goes out when the user can barely type.
+- Quick-phrase chips (Trapped, Injured, Need medical help, ...) in a strip
+  above the keyboard while typing the message.
+- Live byte counter on the message box and a hard cap at the 180-byte
+  broadcast limit; truncation never splits a character or emoji.
+- Copy button for an SOS entry's coordinates on the Scan screen.
 
 ### Changed
 - compileSdk/targetSdk raised from 35 to 36: Google Play requires new
   apps and updates to target Android 16 (API 36) from Aug 31, 2026.
 
 ### Fixed
+- Message box felt stuck: typing round-tripped through storage and lagged,
+  and the keyboard could squash the screen on older Android versions (the
+  app now draws edge-to-edge everywhere).
+- Scan card ran the coordinates and time together on large system fonts;
+  now stacked, and "Seen" is clearer as "Last heard".
 - Crash when stopping the foreground service on Android 6.0 (API 23):
   `stopForeground(int)` only exists from API 24; now uses
   `ServiceCompat.stopForeground`. Found by release lint (NewApi).

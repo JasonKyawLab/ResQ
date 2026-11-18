@@ -169,19 +169,20 @@ can never ship an update to the same Play Store listing again.
 
 ## Privacy policy
 
-A draft exists (not yet checked into this repo, since it needs to be
-hosted at a stable URL for Play Console rather than live as a file
-here) covering exactly what the app's own code already guarantees: no
-network calls, nothing sent to the developer, data only ever leaving a
-device via local Bluetooth broadcast to other nearby devices running
-ResQ. Host it (GitHub Pages, or any static page) and set that URL in
-Play Console before submitting — required the moment an app requests
-location or Bluetooth permissions, regardless of what the policy says.
+The policy is hosted at <https://resq-privacy.pages.dev> (a Cloudflare
+Pages project; the page itself lives in `store/privacy/index.html`). It
+covers exactly what the app's own code already guarantees: no network
+calls, nothing sent to the developer, data only ever leaving a device via
+local Bluetooth broadcast to other nearby devices running ResQ. That URL
+is what goes into Play Console. If the policy changes, edit that file and
+upload it again to the same Pages project; the URL stays the same.
 
-## Deferred to v2
+## Roadmap
 
-Two-way chat between a sender and a specific helper, matched by a
-`check_id` per SOS session. This needs bidirectional BLE messaging and
-session-matching logic that's substantial enough to scope once v1's
-broadcast/relay path is proven in the field — see `ResQForegroundService`'s
+What is decided for v1, planned for v1.1 and v2, and the known limits
+are tracked in [ROADMAP.md](ROADMAP.md). The headline v2 feature is
+two-way chat between a sender and a specific helper, matched by a
+`check_id` per SOS session. That needs bidirectional BLE messaging and
+session-matching logic that is substantial enough to scope once v1's
+broadcast/relay path is proven in the field; see `ResQForegroundService`'s
 class doc for where the relay loop would need to grow to support it.
