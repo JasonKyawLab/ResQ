@@ -37,6 +37,28 @@ const val MAX_HOP_COUNT: Int = 6
 const val MAX_MESSAGE_BYTES: Int = 180
 
 /**
+ * Longest prefix of this string that fits in [maxBytes] when UTF-8 encoded,
+ * never cutting a character (or emoji) in half the way slicing raw bytes would.
+ */
+fun String.truncateUtf8(maxBytes: Int): String {
+    var bytes = 0
+    var end = 0
+    while (end < length) {
+        val codePoint = codePointAt(end)
+        val size = when {
+            codePoint < 0x80 -> 1
+            codePoint < 0x800 -> 2
+            codePoint < 0x10000 -> 3
+            else -> 4
+        }
+        if (bytes + size > maxBytes) break
+        bytes += size
+        end += Character.charCount(codePoint)
+    }
+    return substring(0, end)
+}
+
+/**
  * The compact payload broadcast in the BLE advertisement's service data.
  * Fixed 16-byte layout — do not reorder fields without bumping
  * [PROTOCOL_VERSION], since older receivers decode this positionally.
@@ -96,8 +118,7 @@ object BlePayloadCodec {
     }
 
     fun encodeSosRecord(record: SosRecord): ByteArray {
-        val messageBytes = record.message.toByteArray(Charsets.UTF_8).take(MAX_MESSAGE_BYTES)
-            .toByteArray()
+        val messageBytes = record.message.truncateUtf8(MAX_MESSAGE_BYTES).toByteArray(Charsets.UTF_8)
         val buffer = ByteBuffer.allocate(1 + 4 + 4 + 4 + 2 + messageBytes.size + 1 + 1)
             .order(ByteOrder.BIG_ENDIAN)
         buffer.put(PROTOCOL_VERSION.toByte())

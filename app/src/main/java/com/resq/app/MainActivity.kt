@@ -2,12 +2,15 @@ package com.resq.app
 
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.resq.app.core.di.ServiceLocator
@@ -28,6 +31,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Draw edge-to-edge on every Android version, not just 15+ where it is
+        // forced. Without this, older phones resize the whole window for the
+        // keyboard AND Compose's imePadding() adds the keyboard height again,
+        // leaving a keyboard-sized gap and a squashed message box.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+        )
 
         setContent {
             ResQTheme {

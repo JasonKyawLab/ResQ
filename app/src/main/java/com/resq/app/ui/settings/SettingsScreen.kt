@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -27,13 +31,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.resq.app.core.ble.truncateUtf8
 import com.resq.app.core.data.model.BroadcastInterval
+import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.permissions.PermissionStatus
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.StatusRow
+import com.resq.app.ui.components.rememberDraftField
 import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
@@ -57,6 +68,7 @@ fun SettingsRoute(
 
     SettingsScreen(
         state = uiState,
+        onLocationNoteChanged = viewModel::onLocationNoteChanged,
         onIntervalSelected = viewModel::onIntervalSelected,
         onBatterySaverToggled = viewModel::onBatterySaverToggled,
         onRequestBluetoothEnable = onRequestBluetoothEnable,
@@ -70,6 +82,7 @@ fun SettingsRoute(
 @Composable
 private fun SettingsScreen(
     state: SettingsUiState,
+    onLocationNoteChanged: (String) -> Unit,
     onIntervalSelected: (BroadcastInterval) -> Unit,
     onBatterySaverToggled: (Boolean) -> Unit,
     onRequestBluetoothEnable: () -> Unit,
@@ -78,6 +91,9 @@ private fun SettingsScreen(
     onOpenLocationSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val locationNote = rememberDraftField(state.locationNote)
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -96,6 +112,49 @@ private fun SettingsScreen(
                         BeaconAmber,
                     )
                 )
+            )
+        }
+
+        SettingsSection(title = "My location") {
+            Text(
+                "Your room, floor or building. It's saved on this phone and added to the start " +
+                    "of every SOS, so it still goes out if you can barely type. Update it when " +
+                    "you move. Anyone nearby can read it.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = locationNote.value,
+                onValueChange = { new ->
+                    val capped = new.text.truncateUtf8(SosMessage.LOCATION_NOTE_MAX_BYTES)
+                    locationNote.value = if (capped.length == new.text.length) {
+                        new
+                    } else {
+                        new.copy(text = capped, selection = TextRange(capped.length))
+                    }
+                    onLocationNoteChanged(capped)
+                },
+                label = { Text("Room / floor / building") },
+                placeholder = { Text("e.g. Room 305, 3rd floor, Sunrise Hotel") },
+                supportingText = {
+                    val used = locationNote.value.text.toByteArray(Charsets.UTF_8).size
+                    Text("$used / ${SosMessage.LOCATION_NOTE_MAX_BYTES}", color = TextSecondary)
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedBorderColor = SignalRed,
+                    cursorColor = SignalRed,
+                ),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 

@@ -1,6 +1,7 @@
 package com.resq.app.ui.navigation
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -71,7 +72,9 @@ fun ResQNavHost(
         NavHost(
             navController = navController,
             startDestination = ResQDestination.SENDER.route,
-            modifier = Modifier.padding(innerPadding),
+            // consumeWindowInsets so a screen's own imePadding() only adds the
+            // keyboard height that isn't already covered by this padding.
+            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
         ) {
             composable(ResQDestination.SENDER.route) {
                 SenderRoute(

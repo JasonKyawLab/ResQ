@@ -21,6 +21,8 @@ data class ResQSettings(
     val sendInterval: BroadcastInterval,
     val batterySaverEnabled: Boolean,
     val sosMessageDraft: String,
+    /** Saved "where am I" line (room / floor / building), sent ahead of every SOS message. */
+    val locationNote: String,
 )
 
 /**
@@ -36,6 +38,7 @@ class SettingsRepository(private val context: Context) {
         val SEND_INTERVAL_MINUTES = longPreferencesKey("send_interval_minutes")
         val BATTERY_SAVER_ENABLED = booleanPreferencesKey("battery_saver_enabled")
         val SOS_MESSAGE_DRAFT = stringPreferencesKey("sos_message_draft")
+        val LOCATION_NOTE = stringPreferencesKey("location_note")
     }
 
     val settings: Flow<ResQSettings> = context.dataStore.data.map { prefs ->
@@ -46,6 +49,7 @@ class SettingsRepository(private val context: Context) {
             ),
             batterySaverEnabled = prefs[Keys.BATTERY_SAVER_ENABLED] ?: false,
             sosMessageDraft = prefs[Keys.SOS_MESSAGE_DRAFT] ?: "",
+            locationNote = prefs[Keys.LOCATION_NOTE] ?: "",
         )
     }
 
@@ -68,6 +72,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setSosMessageDraft(message: String) {
         context.dataStore.edit { it[Keys.SOS_MESSAGE_DRAFT] = message }
+    }
+
+    suspend fun setLocationNote(note: String) {
+        context.dataStore.edit { it[Keys.LOCATION_NOTE] = note }
     }
 
     /** Battery saver forces the longest interval regardless of the user's own interval pick. */

@@ -10,6 +10,7 @@ import com.resq.app.core.ble.BeaconFlags
 import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.SosRecord
+import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.permissions.ReadinessRefreshTrigger
@@ -147,11 +148,12 @@ class ResQForegroundService : Service() {
             return false
         }
         val senderId = locator.settingsRepository.senderIdOrCreate()
-        val draft = locator.settingsRepository.settings.first().sosMessageDraft
+        val saved = locator.settingsRepository.settings.first()
+        val message = SosMessage.compose(saved.locationNote, saved.sosMessageDraft)
         val batteryPercent = locator.batteryPercent()
         locator.sessionController.recordBatteryPercent(batteryPercent)
 
-        val flags = (if (draft.isNotBlank()) BeaconFlags.HAS_FULL_MESSAGE else 0) or
+        val flags = (if (message.isNotBlank()) BeaconFlags.HAS_FULL_MESSAGE else 0) or
             (if (batteryPercent in 0..15) BeaconFlags.BATTERY_CRITICAL else 0)
 
         locator.bleAdvertiser.start(
@@ -169,7 +171,7 @@ class ResQForegroundService : Service() {
                 senderId = senderId,
                 latitude = fix.latitude,
                 longitude = fix.longitude,
-                message = draft,
+                message = message,
                 batteryPercent = batteryPercent,
                 hopCount = 0,
             )

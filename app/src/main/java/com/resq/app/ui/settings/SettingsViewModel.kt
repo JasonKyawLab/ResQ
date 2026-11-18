@@ -27,6 +27,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     ) { settings, _ ->
         SettingsUiState(
             senderIdDisplay = "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
+            locationNote = settings.locationNote,
             sendInterval = settings.sendInterval,
             batterySaverEnabled = settings.batterySaverEnabled,
             bluetoothAdapterStatus = BleCapability.adapterStatus(application),
@@ -45,6 +46,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun onIntervalSelected(interval: BroadcastInterval) {
         viewModelScope.launch { locator.settingsRepository.setSendInterval(interval) }
+    }
+
+    fun onLocationNoteChanged(note: String) {
+        viewModelScope.launch { locator.settingsRepository.setLocationNote(note) }
     }
 
     fun onBatterySaverToggled(enabled: Boolean) {

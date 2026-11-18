@@ -5,6 +5,7 @@ import com.resq.app.core.permissions.PermissionStatus
 
 data class SettingsUiState(
     val senderIdDisplay: String = "—",
+    val locationNote: String = "",
     val sendInterval: BroadcastInterval = BroadcastInterval.DEFAULT,
     val batterySaverEnabled: Boolean = false,
     val bluetoothAdapterStatus: PermissionStatus = PermissionStatus.DENIED,

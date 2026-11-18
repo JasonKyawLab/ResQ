@@ -31,6 +31,7 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
         SenderUiState(
             isBroadcasting = session.isSending,
             message = settings.sosMessageDraft,
+            locationNote = settings.locationNote,
             lastFix = session.lastFix,
             lastBroadcastAtEpochMillis = session.lastBroadcastAtEpochMillis,
             batteryPercent = if (session.batteryPercent >= 0) session.batteryPercent else locator.batteryPercent(),
