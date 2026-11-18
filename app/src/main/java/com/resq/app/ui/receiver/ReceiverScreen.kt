@@ -1,5 +1,7 @@
 package com.resq.app.ui.receiver
 
+import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,12 +21,15 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -183,12 +188,30 @@ private fun SosLogCard(entry: SosLogItemUi) {
 
         Text(entry.message, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
 
+        val clipboard = LocalClipboardManager.current
+        val context = LocalContext.current
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(entry.coordinateText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-            Text("seen ${entry.lastSeenText}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            // Stacked, not side by side: with a large system font the two no longer
+            // fit on one line and the time used to wrap into the coordinates.
+            Column(modifier = Modifier.weight(1f)) {
+                Text(entry.coordinateText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text("Last heard ${entry.lastSeenText}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            }
+            TextButton(
+                onClick = {
+                    clipboard.setText(AnnotatedString(entry.coordinateText))
+                    // Android 13+ shows its own "copied" confirmation; older versions need one.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        Toast.makeText(context, "Coordinates copied", Toast.LENGTH_SHORT).show()
+                    }
+                },
+            ) {
+                Text("Copy", color = SignalRed, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
