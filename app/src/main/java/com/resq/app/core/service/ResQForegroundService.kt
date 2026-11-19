@@ -59,8 +59,8 @@ class ResQForegroundService : Service() {
     private var relayJob: Job? = null
     private var pruneJob: Job? = null
 
-    // Per-SOS state: goes up on each new fix and restarts with each Start. Saving it
-    // so a resumed SOS keeps it is a separate step (see ROADMAP, "Keep the SOS running").
+    // Per-SOS state, saved by SettingsRepository.beginSession so a resumed SOS can keep it.
+    private var sessionSenderId = 0
     private var updateCounter = 0
     private var sosStartedAtSeconds = 0L
 
@@ -102,10 +102,12 @@ class ResQForegroundService : Service() {
         ensureForeground()
         locator.sessionController.setSending(true)
         locator.gattServerManager.start()
-        updateCounter = 0
-        sosStartedAtSeconds = System.currentTimeMillis() / 1000
 
         sendJob = scope.launch {
+            val session = locator.settingsRepository.beginSession(System.currentTimeMillis() / 1000)
+            sessionSenderId = session.senderId
+            updateCounter = session.counter
+            sosStartedAtSeconds = session.startedAtSeconds
             while (true) {
                 val fixObtained = broadcastOwnFix()
                 val interval = locator.settingsRepository.effectiveSendInterval()
@@ -138,6 +140,7 @@ class ResQForegroundService : Service() {
         sendJob?.cancel()
         sendJob = null
         locator.sessionController.setSending(false)
+        scope.launch { locator.settingsRepository.endSession() }
         // Hand the advertiser back to the relay loop, if it's running.
         if (relayJob?.isActive != true) {
             locator.bleAdvertiser.stop()
@@ -155,7 +158,7 @@ class ResQForegroundService : Service() {
             Logger.w(TAG) { "No GPS fix available this cycle" }
             return false
         }
-        val senderId = locator.settingsRepository.senderIdOrCreate()
+        val senderId = sessionSenderId
         val saved = locator.settingsRepository.settings.first()
         val message = SosMessage.compose(saved.locationNote, saved.sosMessageDraft)
         val batteryPercent = locator.batteryPercent()
@@ -166,6 +169,7 @@ class ResQForegroundService : Service() {
 
         val counter = updateCounter
         updateCounter = (updateCounter + 1).coerceAtMost(MAX_UPDATE_COUNTER)
+        locator.settingsRepository.saveSessionCounter(updateCounter)
 
         locator.bleAdvertiser.start(
             BeaconPayload(
@@ -242,8 +246,10 @@ class ResQForegroundService : Service() {
 
     private suspend fun relayCycle() {
         if (sendJob?.isActive == true) return // own SOS keeps the advertiser slot
-        val ownSenderId = locator.settingsRepository.senderIdOrCreate()
-        val candidate = locator.sosLogRepository.mostUrgentRelayCandidate(ownSenderId) ?: return
+        val nowSeconds = System.currentTimeMillis() / 1000
+        val candidate = locator.sosLogRepository.mostUrgentRelayCandidate { id ->
+            locator.settingsRepository.isOwnSenderId(id, nowSeconds)
+        } ?: return
         if (candidate.hopCount >= MAX_HOP_COUNT) return
 
         locator.bleAdvertiser.start(

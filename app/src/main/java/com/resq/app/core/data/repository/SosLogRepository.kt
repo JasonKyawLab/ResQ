@@ -78,6 +78,6 @@ class SosLogRepository(
     }
 
     /** Freshest sighting from someone else, used by the relay loop to pick what to re-advertise next. */
-    suspend fun mostUrgentRelayCandidate(excludingSenderId: Int?): SosLogEntity? =
-        dao.getAllSnapshot().firstOrNull { it.senderId != excludingSenderId }
+    suspend fun mostUrgentRelayCandidate(isOwn: suspend (Int) -> Boolean): SosLogEntity? =
+        dao.getAllSnapshot().firstOrNull { !isOwn(it.senderId) }
 }

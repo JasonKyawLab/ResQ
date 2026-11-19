@@ -11,7 +11,6 @@ import com.resq.app.core.data.model.BroadcastInterval
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlin.random.Random
 
 private val Context.dataStore by preferencesDataStore(name = "resq_settings")
 
@@ -39,6 +38,10 @@ class SettingsRepository(private val context: Context) {
         val BATTERY_SAVER_ENABLED = booleanPreferencesKey("battery_saver_enabled")
         val SOS_MESSAGE_DRAFT = stringPreferencesKey("sos_message_draft")
         val LOCATION_NOTE = stringPreferencesKey("location_note")
+        val SESSION_STARTED = longPreferencesKey("session_started_seconds")
+        val SESSION_COUNTER = intPreferencesKey("session_counter")
+        val SESSION_ACTIVE = booleanPreferencesKey("session_active")
+        val RECENT_OWN_IDS = stringPreferencesKey("recent_own_ids")
     }
 
     val settings: Flow<ResQSettings> = context.dataStore.data.map { prefs ->
@@ -53,14 +56,43 @@ class SettingsRepository(private val context: Context) {
         )
     }
 
-    /** Stable per-install identifier, generated once on first access and reused forever after. */
-    suspend fun senderIdOrCreate(): Int {
-        val existing = context.dataStore.data.map { it[Keys.SENDER_ID] }.first()
-        if (existing != null && existing != 0) return existing
-        val generated = Random.nextInt(from = 1, until = Int.MAX_VALUE)
-        context.dataStore.edit { it[Keys.SENDER_ID] = generated }
-        return generated
+    /**
+     * Starts a new SOS: a fresh random sender ID, counter back at 0, Start time now. The ID is
+     * remembered for [OWN_ID_MEMORY_SECONDS] so our own SOS echoed back is not shown as someone else's.
+     */
+    suspend fun beginSession(nowSeconds: Long): SosSession {
+        val id = OwnSessionIds.newSenderId()
+        context.dataStore.edit {
+            it[Keys.SENDER_ID] = id
+            it[Keys.SESSION_STARTED] = nowSeconds
+            it[Keys.SESSION_COUNTER] = 0
+            it[Keys.SESSION_ACTIVE] = true
+            it[Keys.RECENT_OWN_IDS] = OwnSessionIds.remember(it[Keys.RECENT_OWN_IDS], id, nowSeconds)
+        }
+        return SosSession(id, nowSeconds, 0)
     }
+
+    /** The SOS that was running when the app was last stopped without pressing Stop, or null. */
+    suspend fun activeSession(): SosSession? {
+        val prefs = context.dataStore.data.first()
+        if (prefs[Keys.SESSION_ACTIVE] != true) return null
+        val id = prefs[Keys.SENDER_ID] ?: return null
+        if (id == 0) return null
+        return SosSession(id, prefs[Keys.SESSION_STARTED] ?: 0L, prefs[Keys.SESSION_COUNTER] ?: 0)
+    }
+
+    suspend fun saveSessionCounter(counter: Int) {
+        context.dataStore.edit { it[Keys.SESSION_COUNTER] = counter }
+    }
+
+    /** The user pressed Stop: nothing to resume. The ID stays remembered as ours. */
+    suspend fun endSession() {
+        context.dataStore.edit { it[Keys.SESSION_ACTIVE] = false }
+    }
+
+    /** True for the running SOS's ID and any of our IDs from the last 72 hours. */
+    suspend fun isOwnSenderId(id: Int, nowSeconds: Long): Boolean =
+        OwnSessionIds.isOwn(context.dataStore.data.first()[Keys.RECENT_OWN_IDS], id, nowSeconds)
 
     suspend fun setSendInterval(interval: BroadcastInterval) {
         context.dataStore.edit { it[Keys.SEND_INTERVAL_MINUTES] = interval.minutes }

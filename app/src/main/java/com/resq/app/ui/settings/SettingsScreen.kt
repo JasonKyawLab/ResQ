@@ -265,7 +265,7 @@ private fun SettingsScreen(
 
         SettingsSection(title = "Device") {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Sender ID", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text("Last SOS ID", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(state.senderIdDisplay, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Medium)
             }
         }

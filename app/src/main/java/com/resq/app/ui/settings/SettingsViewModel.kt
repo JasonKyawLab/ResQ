@@ -26,7 +26,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         ReadinessRefreshTrigger.flow(application, locator),
     ) { settings, _ ->
         SettingsUiState(
-            senderIdDisplay = "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
+            senderIdDisplay = if (settings.senderId == 0) "—" else "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
             locationNote = settings.locationNote,
             sendInterval = settings.sendInterval,
             batterySaverEnabled = settings.batterySaverEnabled,
@@ -39,10 +39,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             notificationStatus = PermissionManager.notificationStatus(application),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
-
-    init {
-        viewModelScope.launch { locator.settingsRepository.senderIdOrCreate() }
-    }
 
     fun onIntervalSelected(interval: BroadcastInterval) {
         viewModelScope.launch { locator.settingsRepository.setSendInterval(interval) }
