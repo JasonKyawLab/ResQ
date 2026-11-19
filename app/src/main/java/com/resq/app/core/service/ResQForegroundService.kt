@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import com.resq.app.core.ble.BeaconFlags
 import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.MAX_HOP_COUNT
+import com.resq.app.core.ble.MAX_UPDATE_COUNTER
 import com.resq.app.core.ble.SosRecord
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.di.ServiceLocator
@@ -58,6 +59,11 @@ class ResQForegroundService : Service() {
     private var relayJob: Job? = null
     private var pruneJob: Job? = null
 
+    // Per-SOS state: goes up on each new fix and restarts with each Start. Saving it
+    // so a resumed SOS keeps it is a separate step (see ROADMAP, "Keep the SOS running").
+    private var updateCounter = 0
+    private var sosStartedAtSeconds = 0L
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -96,6 +102,8 @@ class ResQForegroundService : Service() {
         ensureForeground()
         locator.sessionController.setSending(true)
         locator.gattServerManager.start()
+        updateCounter = 0
+        sosStartedAtSeconds = System.currentTimeMillis() / 1000
 
         sendJob = scope.launch {
             while (true) {
@@ -156,6 +164,9 @@ class ResQForegroundService : Service() {
         val flags = (if (message.isNotBlank()) BeaconFlags.HAS_FULL_MESSAGE else 0) or
             (if (batteryPercent in 0..15) BeaconFlags.BATTERY_CRITICAL else 0)
 
+        val counter = updateCounter
+        updateCounter = (updateCounter + 1).coerceAtMost(MAX_UPDATE_COUNTER)
+
         locator.bleAdvertiser.start(
             BeaconPayload(
                 senderId = senderId,
@@ -163,7 +174,7 @@ class ResQForegroundService : Service() {
                 longitude = fix.longitude,
                 flags = flags,
                 hopCount = 0,
-                sequence = (System.currentTimeMillis() / 1000 % 256).toInt(),
+                updateCounter = counter,
             )
         )
         locator.gattServerManager.updateRecord(
@@ -174,6 +185,9 @@ class ResQForegroundService : Service() {
                 message = message,
                 batteryPercent = batteryPercent,
                 hopCount = 0,
+                positionTimeSeconds = fix.capturedAtEpochMillis / 1000,
+                sosStartedSeconds = sosStartedAtSeconds,
+                sendIntervalMinutes = locator.settingsRepository.effectiveSendInterval().minutes.toInt(),
             )
         )
         locator.sessionController.recordFix(fix)
@@ -239,7 +253,9 @@ class ResQForegroundService : Service() {
                 longitude = candidate.longitude,
                 flags = BeaconFlags.HAS_FULL_MESSAGE or BeaconFlags.IS_RELAYED,
                 hopCount = candidate.hopCount + 1,
-                sequence = (System.currentTimeMillis() / 1000 % 256).toInt(),
+                // The original sender's counter is not saved yet (the log has no column for
+                // it), so a relay still derives one. Replaced when the log learns the counter.
+                updateCounter = (System.currentTimeMillis() / 1000 % (MAX_UPDATE_COUNTER + 1)).toInt(),
             )
         )
         locator.gattServerManager.updateRecord(
