@@ -11,6 +11,7 @@ import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.MAX_UPDATE_COUNTER
 import com.resq.app.core.ble.SosRecord
+import com.resq.app.core.ble.UpdateVerdict
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.data.settings.SosSession
 import com.resq.app.core.di.ServiceLocator
@@ -227,8 +228,14 @@ class ResQForegroundService : Service() {
 
         scanJob = locator.bleScanner.detections
             .onEach { detection ->
-                locator.sosLogRepository.recordBeaconSighting(detection)
-                locator.sosLogRepository.tryEnrichWithFullRecord(detection)
+                val nowSeconds = System.currentTimeMillis() / 1000
+                // Our own SOS passed back to us is not someone else's emergency.
+                if (locator.settingsRepository.isOwnSenderId(detection.payload.senderId, nowSeconds)) return@onEach
+                val verdict = locator.sosLogRepository.recordBeaconSighting(detection)
+                // Connect only for a new sender or a newer update; the same update is not fetched again.
+                if (verdict == UpdateVerdict.SAVE_AND_FETCH) {
+                    locator.sosLogRepository.tryEnrichWithFullRecord(detection)
+                }
             }
             .launchIn(scope)
 

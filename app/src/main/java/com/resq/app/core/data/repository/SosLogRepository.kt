@@ -4,6 +4,8 @@ import android.os.SystemClock
 import com.resq.app.core.ble.BeaconDetection
 import com.resq.app.core.ble.GattClientManager
 import com.resq.app.core.ble.SosRecord
+import com.resq.app.core.ble.UpdateRules
+import com.resq.app.core.ble.UpdateVerdict
 import com.resq.app.core.data.db.SosLogDao
 import com.resq.app.core.data.db.SosLogEntity
 import com.resq.app.core.util.Logger
@@ -28,31 +30,56 @@ class SosLogRepository(
 
     fun observeLog(): Flow<List<SosLogEntity>> = dao.observeAll()
 
-    suspend fun recordBeaconSighting(detection: BeaconDetection) {
-        val existing = dao.findBySenderId(detection.payload.senderId)
-        dao.upsert(
-            SosLogEntity(
-                senderId = detection.payload.senderId,
-                message = existing?.message ?: "",
-                latitude = detection.payload.latitude,
-                longitude = detection.payload.longitude,
-                batteryPercent = existing?.batteryPercent ?: -1,
-                rssi = detection.rssi,
-                hopCount = detection.payload.hopCount,
-                firstSeenAtEpochMillis = existing?.firstSeenAtEpochMillis ?: detection.seenAtEpochMillis,
-                lastSeenAtEpochMillis = detection.seenAtEpochMillis,
-                hasFullMessage = existing?.hasFullMessage ?: false,
-                updateCounter = detection.payload.updateCounter,
-                isRelayed = detection.payload.isRelayed,
-                isCancelled = detection.payload.isCancelled,
-                positionUnknown = detection.payload.positionUnknown,
-                positionTimeSeconds = existing?.positionTimeSeconds,
-                sosStartedSeconds = existing?.sosStartedSeconds,
-                sendIntervalMinutes = existing?.sendIntervalMinutes,
-                lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
-                dismissed = existing?.dismissed ?: false,
+    /**
+     * Applies the once-only rules (see [UpdateRules]) and returns what happened, so the
+     * caller only connects for the full record when [UpdateVerdict.SAVE_AND_FETCH] says so.
+     */
+    suspend fun recordBeaconSighting(detection: BeaconDetection): UpdateVerdict {
+        val payload = detection.payload
+        val existing = dao.findBySenderId(payload.senderId)
+        val verdict = UpdateRules.decide(existing?.updateCounter, payload.updateCounter)
+        // A new sender has no stored counter; a migrated row has the default 0, which is also a real counter.
+        when (verdict) {
+            UpdateVerdict.IGNORE -> Unit
+            UpdateVerdict.REFRESH_ONLY -> if (existing != null) {
+                dao.upsert(
+                    existing.copy(
+                        rssi = detection.rssi,
+                        hopCount = UpdateRules.lowestHop(existing.hopCount, payload.hopCount),
+                        // Heard directly at least once means Nearby.
+                        isRelayed = existing.isRelayed && payload.isRelayed,
+                        lastSeenAtEpochMillis = detection.seenAtEpochMillis,
+                        lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                    )
+                )
+            }
+            UpdateVerdict.SAVE_AND_FETCH -> dao.upsert(
+                SosLogEntity(
+                    senderId = payload.senderId,
+                    // Keep the old message until the new record arrives, rather than showing a blank.
+                    message = existing?.message ?: "",
+                    latitude = payload.latitude,
+                    longitude = payload.longitude,
+                    batteryPercent = existing?.batteryPercent ?: -1,
+                    rssi = detection.rssi,
+                    hopCount = payload.hopCount,
+                    firstSeenAtEpochMillis = existing?.firstSeenAtEpochMillis ?: detection.seenAtEpochMillis,
+                    lastSeenAtEpochMillis = detection.seenAtEpochMillis,
+                    hasFullMessage = false,
+                    updateCounter = payload.updateCounter,
+                    isRelayed = payload.isRelayed,
+                    isCancelled = payload.isCancelled,
+                    positionUnknown = payload.positionUnknown,
+                    positionTimeSeconds = null,
+                    sosStartedSeconds = existing?.sosStartedSeconds,
+                    sendIntervalMinutes = existing?.sendIntervalMinutes,
+                    lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                    // A newer update brings a dismissed entry back; a repeat of the same one does not.
+                    dismissed = false,
+                )
             )
-        )
+        }
+        return verdict
     }
 
     /** Attempts the richer GATT pull; safe to call even if it fails or times out. */
