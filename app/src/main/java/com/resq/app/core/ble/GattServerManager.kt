@@ -13,6 +13,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import com.resq.app.BuildConfig
 import com.resq.app.core.util.Logger
 import java.util.concurrent.ConcurrentHashMap
 
@@ -21,8 +22,12 @@ private const val TAG = "GattServerManager"
 /** Most helpers connected at once; a further one is disconnected straight away. */
 private const val MAX_HELPERS = 4
 
-/** A helper gets this long in total, however it behaves. Reading takes well under a second. */
-private const val MAX_CONNECTION_MILLIS = 10_000L
+/**
+ * A helper gets this long in total, however it behaves. A phone reads in well under a second, so
+ * release builds use 10 seconds. Debug builds allow 2 minutes so a person can connect with a
+ * Bluetooth tool (nRF Connect, LightBlue) and read the record by hand.
+ */
+private val MAX_CONNECTION_MILLIS = if (BuildConfig.DEBUG) 120_000L else 10_000L
 
 /** After a read request the helper is let go this long later, unless it asks for more. */
 private const val LINGER_AFTER_READ_MILLIS = 1_500L

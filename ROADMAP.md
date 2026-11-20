@@ -440,6 +440,12 @@ years. These rules keep old and new phones able to see each other:
 
 - Range through concrete and rubble may be only a few metres, so relays depend
   on people being nearby.
+- A sender cannot always hang up on a helper. Seen on a Samsung Galaxy S9
+  (Android 10): the app asks for the disconnect 1.5 seconds after the read (and
+  at 10 seconds at the latest), and stops serving that helper, but the Bluetooth
+  link stays open because Samsung's own GATT service shares it. The beacon is
+  restarted after any helper leaves, and at most 4 helpers are served at once.
+  Check on a second phone brand.
 - Crowd behaviour cannot be tested before release. The closed test is the first
   real data.
 - Some phone makers (Xiaomi, Oppo, Huawei, Samsung) kill background apps and may
