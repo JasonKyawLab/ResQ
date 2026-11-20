@@ -9,7 +9,10 @@ data class SosLogItemUi(
     val message: String,
     val coordinateText: String,
     val signalStrength: SignalStrength,
-    val lastSeenText: String,
+    /** "Heard 3 h ago (20:59)": the age first, a clock time only for older entries. */
+    val heardText: String,
+    /** "Position 4 min old", or null when the sender did not say when the position was taken. */
+    val positionText: String?,
     val hopCount: Int,
     val isRelayed: Boolean,
     val stage: EntryStage,

@@ -219,7 +219,7 @@ When a phone hears sender X, update number u, hop h:
 ### 5. Time
 - [x] Position time and SOS started use the phone's system clock (UTC seconds),
       sent as extras `01` and `02`.
-- [ ] "Heard X ago" on the Receiver uses `SystemClock.elapsedRealtime()`, which a
+- [x] "Heard X ago" on the Receiver uses `SystemClock.elapsedRealtime()`, which a
       changed clock cannot affect. Elapsed time restarts at reboot while entries
       are saved, so fall back to the wall clock for entries saved before a reboot.
 - [ ] If testing shows clock problems, v1.1.0 adds an age field as a new extra.
@@ -260,8 +260,11 @@ When a phone hears sender X, update number u, hop h:
       current (or a recent own) session ID arrives with the relayed flag. The phone
       scans at low power while sending to hear it.
 - [ ] Settings: "Clear all received SOS" with a confirmation dialog.
-- [ ] Receiver cards: "Position X min old" and "Heard X min ago", in minutes, with
-      a clock time or date once older than a day.
+- [x] Receiver cards: "Position X min old" and "Heard X min ago", in minutes, with
+      a clock time or date once older than a day. Built as "Heard 3 h ago (20:59)"
+      and "Heard 2 days ago (Nov 19, 21:59)"; the stage and the text use the same age.
+      Position age comes from the sender's own clock, so it is hidden when that clock
+      is ahead of ours; a sender clock far behind would show a too-old position.
 - [ ] **First-launch screen**, shown once: what is sent (location and message, to
       anyone nearby with ResQ), that it is not encrypted, that it only works if
       another phone is in range, that it does not contact emergency services, and

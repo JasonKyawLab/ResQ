@@ -1,6 +1,7 @@
 package com.resq.app.ui.receiver
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -45,9 +46,10 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
         minuteTick,
     ) { session, entries, _, _ ->
         val now = System.currentTimeMillis()
+        val nowElapsed = SystemClock.elapsedRealtime()
         ReceiverUiState(
             isListening = session.isReceiving,
-            entries = entries.map { toUiItem(it, now) }
+            entries = entries.map { toUiItem(it, now, nowElapsed) }
                 .sortedWith(compareBy<SosLogItemUi> { it.stage }.thenByDescending { lastSeenOf(entries, it.senderId) }),
             bluetoothReady = BleCapability.readinessToScan(application) == BleReadiness.Ready,
             permissionsGranted = PermissionManager.hasEverythingRequired(application),
@@ -76,8 +78,13 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
     private fun lastSeenOf(entries: List<SosLogEntity>, senderId: Int): Long =
         entries.firstOrNull { it.senderId == senderId }?.lastSeenAtEpochMillis ?: 0L
 
-    private fun toUiItem(entity: SosLogEntity, now: Long): SosLogItemUi {
-        val age = now - entity.lastSeenAtEpochMillis
+    private fun toUiItem(entity: SosLogEntity, now: Long, nowElapsed: Long): SosLogItemUi {
+        val age = EntryLifecycle.heardAgeMillis(
+            lastSeenWallMillis = entity.lastSeenAtEpochMillis,
+            lastSeenElapsedMillis = entity.lastSeenElapsedMillis,
+            nowWallMillis = now,
+            nowElapsedMillis = nowElapsed,
+        )
         val stage = EntryLifecycle.stage(entity.isCancelled, age, entity.sendIntervalMinutes)
         val status = when (stage) {
             EntryStage.LIVE -> "Live"
@@ -85,17 +92,29 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
             EntryStage.MARKED_SAFE -> "Marked safe by sender (unverified)"
             EntryStage.ARCHIVED -> "Archived · last heard ${EntryLifecycle.ageText(age)} ago"
         }
-        return buildItem(entity, stage, status)
+        return buildItem(entity, stage, status, age, now)
     }
 
-    private fun buildItem(entity: SosLogEntity, stage: EntryStage, status: String): SosLogItemUi = SosLogItemUi(
+    private fun buildItem(
+        entity: SosLogEntity,
+        stage: EntryStage,
+        status: String,
+        ageMillis: Long,
+        now: Long,
+    ): SosLogItemUi = SosLogItemUi(
         senderId = entity.senderId,
         displayId = "#" + Integer.toHexString(entity.senderId).uppercase().takeLast(6),
         message = entity.message.ifBlank { "(location only — no message received yet)" },
         coordinateText = String.format(Locale.US, "%.5f, %.5f", entity.latitude, entity.longitude),
         signalStrength = SignalStrength.fromRssi(entity.rssi),
-        lastSeenText = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            .format(Date(entity.lastSeenAtEpochMillis)),
+        heardText = EntryLifecycle.heardLine(
+            ageMillis = ageMillis,
+            timeOfDay = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entity.lastSeenAtEpochMillis)),
+            dateAndTime = SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(entity.lastSeenAtEpochMillis)),
+        ),
+        positionText = EntryLifecycle.positionLine(
+            EntryLifecycle.positionAgeMillis(entity.positionTimeSeconds, now),
+        ),
         hopCount = entity.hopCount,
         isRelayed = entity.hopCount > 0,
         stage = stage,

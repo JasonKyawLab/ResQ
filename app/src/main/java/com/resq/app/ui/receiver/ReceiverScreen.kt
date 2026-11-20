@@ -228,7 +228,10 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
             // fit on one line and the time used to wrap into the coordinates.
             Column(modifier = Modifier.weight(1f).alpha(contentAlpha)) {
                 Text(entry.coordinateText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                Text("Last heard ${entry.lastSeenText}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                entry.positionText?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                }
+                Text(entry.heardText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }
             Row {
             TextButton(onClick = onDismiss) {

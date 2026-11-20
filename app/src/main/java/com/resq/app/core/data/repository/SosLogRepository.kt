@@ -189,8 +189,11 @@ class SosLogRepository(
     /** Freshest sighting from someone else, used by the relay loop to pick what to re-advertise next. */
     suspend fun mostUrgentRelayCandidate(isOwn: suspend (Int) -> Boolean): SosLogEntity? {
         val now = System.currentTimeMillis()
+        val nowElapsed = SystemClock.elapsedRealtime()
         return dao.getAllSnapshot().firstOrNull { entry ->
-            val age = now - entry.lastSeenAtEpochMillis
+            val age = EntryLifecycle.heardAgeMillis(
+                entry.lastSeenAtEpochMillis, entry.lastSeenElapsedMillis, now, nowElapsed,
+            )
             val stage = EntryLifecycle.stage(entry.isCancelled, age, entry.sendIntervalMinutes)
             !isOwn(entry.senderId) && EntryLifecycle.shouldRelay(stage, age, entry.dismissed)
         }
