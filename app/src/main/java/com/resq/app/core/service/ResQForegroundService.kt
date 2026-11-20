@@ -12,7 +12,6 @@ import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.MAX_UPDATE_COUNTER
 import com.resq.app.core.ble.SosRecord
-import com.resq.app.core.ble.UpdateVerdict
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.data.settings.SosSession
 import com.resq.app.core.di.ServiceLocator
@@ -132,7 +131,7 @@ class ResQForegroundService : Service() {
         if (sendJob?.isActive == true) return
         ensureForeground()
         locator.sessionController.setSending(true)
-        locator.gattServerManager.start()
+        startGattServer()
 
         sendJob = scope.launch {
             val session = resume ?: locator.settingsRepository.beginSession(System.currentTimeMillis() / 1000)
@@ -194,6 +193,12 @@ class ResQForegroundService : Service() {
                     if (last != null && composed != last) refreshSignal.trySend(Unit)
                 }
         }
+    }
+
+    private fun startGattServer() {
+        // After a helper leaves, make sure our beacon is still on the air.
+        locator.gattServerManager.onHelperDisconnected = { locator.bleAdvertiser.refresh() }
+        locator.gattServerManager.start()
     }
 
     private fun stopSending() {
@@ -268,7 +273,7 @@ class ResQForegroundService : Service() {
         if (scanJob?.isActive == true) return
         ensureForeground()
         locator.sessionController.setReceiving(true)
-        locator.gattServerManager.start()
+        startGattServer()
         locator.bleScanner.start()
 
         scanJob = locator.bleScanner.detections
@@ -276,10 +281,11 @@ class ResQForegroundService : Service() {
                 val nowSeconds = System.currentTimeMillis() / 1000
                 // Our own SOS passed back to us is not someone else's emergency.
                 if (locator.settingsRepository.isOwnSenderId(detection.payload.senderId, nowSeconds)) return@onEach
-                val verdict = locator.sosLogRepository.recordBeaconSighting(detection)
-                // Connect only for a new sender or a newer update; the same update is not fetched again.
-                if (verdict == UpdateVerdict.SAVE_AND_FETCH) {
-                    locator.sosLogRepository.tryEnrichWithFullRecord(detection)
+                val result = locator.sosLogRepository.recordBeaconSighting(detection)
+                // Connect for a new or newer update (or to retry one that failed). Launched on its
+                // own so a slow connection never holds up the next beacon.
+                if (result.needsFetch) {
+                    scope.launch { locator.sosLogRepository.tryEnrichWithFullRecord(detection) }
                 }
             }
             .launchIn(scope)

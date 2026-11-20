@@ -119,11 +119,11 @@ pass, before the build is signed and uploaded.
 
 ## Decided in review (still to build)
 
-- [ ] **Marker `A1`** in the first byte of the beacon and the record (see above).
+- [x] **Marker `A1`** in the first byte of the beacon and the record (see above).
       It filters accidental matches. It does not save battery: the phone's own
       scan filter on service ID `0xFFF1` already drops most other devices before
       the app sees them.
-- [ ] **New sender ID at every Start.** Also:
+- [x] **New sender ID at every Start.** Also:
   - The saved "SOS is active" state keeps the same ID, counter and start time,
     so an SOS resumed after a kill is still the same SOS.
   - The phone remembers its recent own IDs (about 72 hours), so a relay that
@@ -159,44 +159,46 @@ pass, before the build is signed and uploaded.
 ## Must do
 
 ### 1. Format (first, it cannot be changed after release)
-- [ ] Record extras as `type, length, value` (types `01`, `02`, `03` above) with
+- [x] Record extras as `type, length, value` (types `01`, `02`, `03` above) with
       the four reader rules.
-- [ ] Beacon flags: 8 = cancelled, 16 = position unknown. Bits 32 to 128 stay
+- [x] Beacon flags: 8 = cancelled, 16 = position unknown. Bits 32 to 128 stay
       reserved (write 0, ignore on read).
-- [ ] Marker + version byte `A1` in the beacon and the record; drop packets with a
+- [x] Marker + version byte `A1` in the beacon and the record; drop packets with a
       different marker; ignore an unknown version.
-- [ ] New random sender ID at every Start.
-- [ ] Update counter: 2 bytes, starts at 0 with each new sender ID, saved while the
+- [x] New random sender ID at every Start.
+- [x] Update counter: 2 bytes, starts at 0 with each new sender ID, saved while the
       SOS is active, only goes up. Changes only on a new GPS fix or a message edit.
-- [ ] Do not spend the spare bytes in the advertisement (about 3 left after the
+- [x] Do not spend the spare bytes in the advertisement (about 3 left after the
       17-byte beacon). Keep them as headroom.
-- [ ] Room database migration for the new columns, so phones that already have
+- [x] Room database migration for the new columns, so phones that already have
       the app do not crash on update.
 
 ### 2. Keep the SOS running
-- [ ] Save "an SOS is active" (with its sender ID, update counter and start time)
-      and "scanning is on" on the phone, clear it on Stop, and resume it when Android restarts the service. **Bug found in the
-      code:** when Android kills the process and restarts the service, it comes
-      back with no instruction, sees nothing running, and stops itself, so the
-      SOS silently ends.
-- [ ] Make sure the restarted service shows its notification straight away.
+- [x] Save "an SOS is active" (with its sender ID, update counter and start time)
+      on the phone, clear it on Stop, and resume it when Android restarts the service
+      and when the app is opened (only if saved less than 12 hours ago). **Bug found
+      in the code:** when Android kills the process and restarts the service, it
+      came back with no instruction, saw nothing running, and stopped itself, so
+      the SOS silently ended. Fixed and checked on the Samsung.
+- [ ] Also save "scanning is on" and resume it the same way.
+- [x] Make sure the restarted service shows its notification straight away.
 - [ ] Battery optimisation row in Settings, like the permission rows: shows
       whether ResQ is exempt, opens the system battery page (no special
       permission), and gives short steps for Xiaomi, Oppo, Huawei and Samsung
       (auto-start, lock in recents). The restricted "ignore battery
       optimisations" permission waits until Play's policy is checked.
-- [ ] Check that advertising keeps running after another phone connects and
+- [x] Check that advertising keeps running after another phone connects and
       disconnects; restart it if it does not.
 
 ### 3. Connections
-- [ ] Wait a random 0.5 to 3 seconds before connecting to a sender, so a crowd
+- [x] Wait a random 0.5 to 3 seconds before connecting to a sender, so a crowd
       of helpers does not all connect at once.
-- [ ] Back off after a failed connection (for example status 133).
-- [ ] One connection per update (see the rules below). Today nothing limits it, so
+- [x] Back off after a failed connection (for example status 133).
+- [x] One connection per update (see the rules below). Today nothing limits it, so
       a phone in range of a flagged beacon can reconnect over and over.
-- [ ] On the sender: disconnect a helper after the read or a time limit, and cap
+- [x] On the sender: disconnect a helper after the read or a time limit, and cap
       simultaneous connections, so one slow helper cannot hold a slot.
-- [ ] If the larger MTU request returns false, carry on instead of waiting for the
+- [x] If the larger MTU request returns false, carry on instead of waiting for the
       8 second timeout.
 
 ### 4. Once-only handling and relay rules
@@ -209,13 +211,13 @@ When a phone hears sender X, update number u, hop h:
 | u same | No fetch, no relay. Refresh "heard", keep the lowest hop |
 | u older | Ignore |
 
-- [ ] Compare update numbers with wraparound.
-- [ ] Keep the lowest hop count ever heard. Hop is only a safety fuse (cap 6); it
+- [x] Compare update numbers with wraparound.
+- [x] Keep the lowest hop count ever heard. Hop is only a safety fuse (cap 6); it
       stops ping-pong inflation between nearby relays.
 - [ ] Show **Nearby** (heard directly) or **Relayed** instead of a hop count.
 
 ### 5. Time
-- [ ] Position time and SOS started use the phone's system clock (UTC seconds),
+- [x] Position time and SOS started use the phone's system clock (UTC seconds),
       sent as extras `01` and `02`.
 - [ ] "Heard X ago" on the Receiver uses `SystemClock.elapsedRealtime()`, which a
       changed clock cannot affect. Elapsed time restarts at reboot while entries

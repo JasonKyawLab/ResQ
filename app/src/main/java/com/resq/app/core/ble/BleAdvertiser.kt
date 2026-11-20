@@ -37,6 +37,7 @@ class BleAdvertiser(private val context: Context) {
             ?.adapter?.bluetoothLeAdvertiser
 
     private var callback: AdvertiseCallback? = null
+    private var lastPayload: BeaconPayload? = null
 
     @SuppressLint("MissingPermission") // caller verifies BleCapability.readinessToAdvertise first
     fun start(payload: BeaconPayload) {
@@ -46,6 +47,7 @@ class BleAdvertiser(private val context: Context) {
             return
         }
         stop()
+        lastPayload = payload
 
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
@@ -79,8 +81,20 @@ class BleAdvertiser(private val context: Context) {
         leAdvertiser.startAdvertising(settings, data, newCallback)
     }
 
+    /**
+     * Starts the current beacon again if one is meant to be on the air. Some phones stop
+     * advertising when a helper connects or disconnects; this is called after a helper
+     * leaves, so the beacon never silently disappears. Does nothing when not advertising.
+     */
+    fun refresh() {
+        val payload = lastPayload ?: return
+        if (callback == null) return
+        start(payload)
+    }
+
     @SuppressLint("MissingPermission")
     fun stop() {
+        lastPayload = null
         val cb = callback ?: return
         advertiser?.stopAdvertising(cb)
         callback = null

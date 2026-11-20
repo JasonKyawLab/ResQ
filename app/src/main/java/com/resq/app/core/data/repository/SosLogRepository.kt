@@ -9,9 +9,23 @@ import com.resq.app.core.ble.UpdateVerdict
 import com.resq.app.core.data.db.SosLogDao
 import com.resq.app.core.data.db.SosLogEntity
 import com.resq.app.core.util.Logger
+import com.resq.app.core.ble.FetchBackoff
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.random.Random
 
 private const val TAG = "SosLogRepository"
+
+/** A random wait before connecting, so a crowd of helpers does not all connect at the same moment. */
+private const val FETCH_JITTER_MIN_MILLIS = 500L
+private const val FETCH_JITTER_MAX_MILLIS = 3_000L
+
+/** What recording a sighting decided, and whether the caller should now connect for the full record. */
+data class SightingResult(val verdict: UpdateVerdict, val needsFetch: Boolean)
 
 /** How long a sighting stays in the log without a fresh re-sighting before it's pruned. */
 const val STALE_ENTRY_MAX_AGE_MILLIS = 60 * 60_000L // 1 hour
@@ -28,16 +42,26 @@ class SosLogRepository(
     private val gattClientManager: GattClientManager,
 ) {
 
+    private val fetchBackoff = FetchBackoff()
+
+    /** Senders with a connection attempt under way: one attempt at a time per sender. */
+    private val fetchInFlight = ConcurrentHashMap<Int, Boolean>()
+
+    /** One connection at a time overall: simpler on the radio and far more reliable on cheap phones. */
+    private val fetchGate = Semaphore(1)
+
     fun observeLog(): Flow<List<SosLogEntity>> = dao.observeAll()
 
     /**
      * Applies the once-only rules (see [UpdateRules]) and returns what happened, so the
      * caller only connects for the full record when [UpdateVerdict.SAVE_AND_FETCH] says so.
      */
-    suspend fun recordBeaconSighting(detection: BeaconDetection): UpdateVerdict {
+    suspend fun recordBeaconSighting(detection: BeaconDetection): SightingResult {
         val payload = detection.payload
         val existing = dao.findBySenderId(payload.senderId)
         val verdict = UpdateRules.decide(existing?.updateCounter, payload.updateCounter)
+        // A newer update starts fresh: earlier failures were about an older update.
+        if (verdict == UpdateVerdict.SAVE_AND_FETCH) fetchBackoff.reset(payload.senderId)
         // A new sender has no stored counter; a migrated row has the default 0, which is also a real counter.
         when (verdict) {
             UpdateVerdict.IGNORE -> Unit
@@ -79,16 +103,53 @@ class SosLogRepository(
                 )
             )
         }
-        return verdict
+        // Connect for a new or newer update, and also to retry an update whose full record never
+        // arrived (the back-off in tryEnrichWithFullRecord keeps that retry gentle).
+        val needsFetch = payload.hasFullMessage && when (verdict) {
+            UpdateVerdict.SAVE_AND_FETCH -> true
+            UpdateVerdict.REFRESH_ONLY -> existing != null && !existing.hasFullMessage
+            UpdateVerdict.IGNORE -> false
+        }
+        return SightingResult(verdict, needsFetch)
     }
 
-    /** Attempts the richer GATT pull; safe to call even if it fails or times out. */
+    /**
+     * Attempts the richer GATT pull. Safe to call for every beacon: it does nothing if an
+     * attempt for this sender is already running, if the back-off says to wait, or if the
+     * record turned up in the meantime. One connection at a time, after a short random wait.
+     */
     suspend fun tryEnrichWithFullRecord(detection: BeaconDetection) {
         if (!detection.payload.hasFullMessage) return
-        val record = runCatching { gattClientManager.fetchSosRecord(detection.deviceAddress) }
-            .onFailure { Logger.w(TAG, it) { "GATT enrich failed for ${detection.deviceAddress}" } }
-            .getOrNull() ?: return
-        mergeFullRecord(record, detection.rssi)
+        val sender = detection.payload.senderId
+        if (fetchInFlight.putIfAbsent(sender, true) != null) return
+        try {
+            if (!fetchBackoff.canAttempt(sender, SystemClock.elapsedRealtime())) return
+            delay(Random.nextLong(FETCH_JITTER_MIN_MILLIS, FETCH_JITTER_MAX_MILLIS + 1))
+            val stored = dao.findBySenderId(sender)
+            // Gone, already complete, or superseded by a newer update while we waited.
+            if (stored == null || stored.hasFullMessage ||
+                UpdateRules.compare(detection.payload.updateCounter, stored.updateCounter) < 0
+            ) return
+
+            val record = fetchGate.withPermit {
+                try {
+                    gattClientManager.fetchSosRecord(detection.deviceAddress)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Logger.w(TAG, e) { "GATT enrich failed for ${detection.deviceAddress}" }
+                    null
+                }
+            }
+            if (record == null || record.senderId != sender) {
+                fetchBackoff.recordFailure(sender, SystemClock.elapsedRealtime())
+                return
+            }
+            fetchBackoff.reset(sender)
+            mergeFullRecord(record, detection.rssi)
+        } finally {
+            fetchInFlight.remove(sender)
+        }
     }
 
     private suspend fun mergeFullRecord(record: SosRecord, rssi: Int) {

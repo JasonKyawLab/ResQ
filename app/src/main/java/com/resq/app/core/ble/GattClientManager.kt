@@ -1,6 +1,7 @@
 package com.resq.app.core.ble
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
@@ -40,7 +41,9 @@ class GattClientManager(private val context: Context) {
                 val callback = object : BluetoothGattCallback() {
                     override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
                         if (newState == BluetoothProfile.STATE_CONNECTED) {
-                            g.requestMtu(DESIRED_MTU)
+                            // If the request is refused, go on at once instead of waiting
+                            // for the timeout (the read still works, in smaller pieces).
+                            if (!g.requestMtu(DESIRED_MTU)) g.discoverServices()
                         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                             if (continuation.isActive) continuation.resume(null)
                             g.close()
@@ -80,7 +83,8 @@ class GattClientManager(private val context: Context) {
                     }
                 }
 
-                gatt = device.connectGatt(context, false, callback)
+                // LE only: avoids the classic-transport attempt that causes many status 133 failures.
+                gatt = device.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
                 continuation.invokeOnCancellation {
                     Logger.d(TAG) { "GATT read cancelled for $deviceAddress" }
                     gatt?.disconnect()
