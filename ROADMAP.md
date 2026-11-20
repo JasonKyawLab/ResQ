@@ -150,7 +150,7 @@ pass, before the build is signed and uploaded.
       sending even when the user's Scan switch is off, so the indicator is not
       misleading; or grey the indicator out. Never show "nobody around" just
       because the scanner is off.
-- [ ] **A cancel shows as "Marked safe by sender (unverified)"**, dimmed and
+- [x] **A cancel shows as "Marked safe by sender (unverified)"**, dimmed and
       sorted lower, never silently deleted. Dismiss removes it.
 - [x] **No checksum in the beacon.** Bluetooth already checks for corruption. The
       marker, the range checks and our own 128-bit connection ID cover
@@ -225,16 +225,24 @@ When a phone hears sender X, update number u, hop h:
 - [ ] If testing shows clock problems, v1.1.0 adds an age field as a new extra.
 
 ### 6. Ending an SOS
-- [ ] The Stop button sends "cancelled" (flag 8, newer update number) for a short
+- [x] The Stop button sends "cancelled" (flag 8, newer update number) for a short
       while. It is never sent automatically when the app or service is killed: a
       kill is not a rescue.
-- [ ] Keep stale entries instead of deleting them after an hour. Stages: Live,
+- [x] Keep stale entries instead of deleting them after an hour. Stages: Live,
       then Signal lost ("last known position, 3 h old", about twice the sender's
       interval), then archived at about 48 to 72 hours. A dead phone's last known
       position is the most valuable thing a rescuer has.
-- [ ] Dismiss button on the Receiver (clears an entry on that phone only).
-- [ ] A received cancel shows as "Marked safe by sender (unverified)", dimmed and
+- [x] Dismiss button on the Receiver (clears an entry on that phone only).
+- [x] A received cancel shows as "Marked safe by sender (unverified)", dimmed and
       sorted lower. It is relayed for a short while like any update.
+      Built: Stop broadcasts "cancelled" for 60 seconds (nothing is sent if no
+      broadcast ever went out); entries are kept 72 hours (Live, Signal lost, Marked
+      safe, Archived); only live ones, and a fresh "marked safe" for 15 minutes, are
+      relayed; Dismiss hides an entry until a newer update arrives.
+- [ ] **Zombie risk, still open.** "Last heard" is refreshed by any sighting of the
+      same update, including a relay. Two phones that keep relaying a dead sender's
+      last update to each other would keep it "Live". Fix: stage by the time since
+      the last *new* update or the last *direct* hearing (needs one more column).
 
 ### 7. Sending
 - [ ] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Today a

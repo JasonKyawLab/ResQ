@@ -14,6 +14,14 @@ interface SosLogDao {
     @Query("SELECT * FROM sos_log ORDER BY lastSeenAtEpochMillis DESC")
     fun observeAll(): Flow<List<SosLogEntity>>
 
+    /** What the Scan screen shows: everything the user has not dismissed. */
+    @Query("SELECT * FROM sos_log WHERE dismissed = 0 ORDER BY lastSeenAtEpochMillis DESC")
+    fun observeVisible(): Flow<List<SosLogEntity>>
+
+    /** Hides one entry on this phone only. A newer update from that sender brings it back. */
+    @Query("UPDATE sos_log SET dismissed = 1 WHERE senderId = :senderId")
+    suspend fun dismiss(senderId: Int)
+
     @Query("SELECT * FROM sos_log ORDER BY lastSeenAtEpochMillis DESC")
     suspend fun getAllSnapshot(): List<SosLogEntity>
 

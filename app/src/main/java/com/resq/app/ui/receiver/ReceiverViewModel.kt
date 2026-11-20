@@ -9,13 +9,18 @@ import com.resq.app.core.ble.BleCapability
 import com.resq.app.core.ble.BleReadiness
 import com.resq.app.core.data.db.SosLogEntity
 import com.resq.app.core.data.model.SignalStrength
+import com.resq.app.core.data.repository.EntryLifecycle
+import com.resq.app.core.data.repository.EntryStage
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import com.resq.app.core.service.ResQForegroundService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -25,14 +30,25 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
 
     private val locator = ServiceLocator.getInstance(application)
 
+    /** Entries change stage with time even when nothing is saved, so re-check every minute. */
+    private val minuteTick = flow {
+        while (true) {
+            emit(Unit)
+            delay(60_000L)
+        }
+    }
+
     val uiState: StateFlow<ReceiverUiState> = combine(
         locator.sessionController.state,
         locator.sosLogRepository.observeLog(),
         ReadinessRefreshTrigger.flow(application, locator),
-    ) { session, entries, _ ->
+        minuteTick,
+    ) { session, entries, _, _ ->
+        val now = System.currentTimeMillis()
         ReceiverUiState(
             isListening = session.isReceiving,
-            entries = entries.map(::toUiItem),
+            entries = entries.map { toUiItem(it, now) }
+                .sortedWith(compareBy<SosLogItemUi> { it.stage }.thenByDescending { lastSeenOf(entries, it.senderId) }),
             bluetoothReady = BleCapability.readinessToScan(application) == BleReadiness.Ready,
             permissionsGranted = PermissionManager.hasEverythingRequired(application),
         )
@@ -49,7 +65,26 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun toUiItem(entity: SosLogEntity): SosLogItemUi = SosLogItemUi(
+    fun onDismiss(senderId: Int) {
+        viewModelScope.launch { locator.sosLogRepository.dismiss(senderId) }
+    }
+
+    private fun lastSeenOf(entries: List<SosLogEntity>, senderId: Int): Long =
+        entries.firstOrNull { it.senderId == senderId }?.lastSeenAtEpochMillis ?: 0L
+
+    private fun toUiItem(entity: SosLogEntity, now: Long): SosLogItemUi {
+        val age = now - entity.lastSeenAtEpochMillis
+        val stage = EntryLifecycle.stage(entity.isCancelled, age, entity.sendIntervalMinutes)
+        val status = when (stage) {
+            EntryStage.LIVE -> "Live"
+            EntryStage.SIGNAL_LOST -> "Signal lost · last known position, ${EntryLifecycle.ageText(age)} old"
+            EntryStage.MARKED_SAFE -> "Marked safe by sender (unverified)"
+            EntryStage.ARCHIVED -> "Archived · last heard ${EntryLifecycle.ageText(age)} ago"
+        }
+        return buildItem(entity, stage, status)
+    }
+
+    private fun buildItem(entity: SosLogEntity, stage: EntryStage, status: String): SosLogItemUi = SosLogItemUi(
         senderId = entity.senderId,
         displayId = "#" + Integer.toHexString(entity.senderId).uppercase().takeLast(6),
         message = entity.message.ifBlank { "(location only — no message received yet)" },
@@ -59,6 +94,8 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
             .format(Date(entity.lastSeenAtEpochMillis)),
         hopCount = entity.hopCount,
         isRelayed = entity.hopCount > 0,
+        stage = stage,
+        statusText = status,
     )
 
     companion object {

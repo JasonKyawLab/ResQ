@@ -37,6 +37,9 @@ private const val TAG = "ResQForegroundService"
 private const val RELAY_CYCLE_INTERVAL_MILLIS = 2 * 60_000L
 private const val STALE_PRUNE_INTERVAL_MILLIS = 10 * 60_000L
 private const val FIX_RETRY_BACKOFF_MILLIS = 30_000L
+
+/** How long the "stopped" beacon stays on the air after Stop. Phones relay it for a while longer. */
+private const val STOP_ANNOUNCE_MILLIS = 60_000L
 private const val EDIT_DEBOUNCE_MILLIS = 2_000L
 
 /**
@@ -66,6 +69,10 @@ class ResQForegroundService : Service() {
     private var scanJob: Job? = null
     private var relayJob: Job? = null
     private var pruneJob: Job? = null
+
+    /** Runs for a short while after the user presses Stop, telling nearby phones the SOS ended. */
+    @Volatile
+    private var endingJob: Job? = null
 
     // Per-SOS state, saved by SettingsRepository.beginSession so a resumed SOS can keep it.
     private var sessionSenderId = 0
@@ -121,6 +128,7 @@ class ResQForegroundService : Service() {
         scanJob?.cancel()
         relayJob?.cancel()
         pruneJob?.cancel()
+        endingJob?.cancel()
         super.onDestroy()
     }
 
@@ -129,6 +137,9 @@ class ResQForegroundService : Service() {
     @Synchronized
     private fun startSending(resume: SosSession? = null) {
         if (sendJob?.isActive == true) return
+        // Started again while the "stopped" beacon is still on the air: this SOS carries on.
+        endingJob?.cancel()
+        endingJob = null
         ensureForeground()
         locator.sessionController.setSending(true)
         startGattServer()
@@ -202,14 +213,50 @@ class ResQForegroundService : Service() {
     }
 
     private fun stopSending() {
+        val wasSending = sendJob?.isActive == true
         sendJob?.cancel()
         sendJob = null
         locator.sessionController.setSending(false)
         scope.launch { locator.settingsRepository.endSession(System.currentTimeMillis() / 1000) }
-        // Hand the advertiser back to the relay loop, if it's running.
-        if (relayJob?.isActive != true) {
+        if (wasSending && lastBroadcastMessage != null) {
+            // Only the Stop button (or the notification's Stop) gets here, never a kill, so an SOS that
+            // died with its phone is not announced as safe. Skipped if nothing was ever broadcast.
+            announceStopped()
+        } else if (relayJob?.isActive != true && endingJob?.isActive != true) {
+            // Hand the advertiser back to the relay loop, if it's running.
             locator.bleAdvertiser.stop()
         }
+    }
+
+    /**
+     * Broadcasts the same SOS once more with the "cancelled" flag and a newer update counter, so phones
+     * that heard it can show "Marked safe by sender (unverified)". The last full record keeps being served.
+     */
+    private fun announceStopped() {
+        endingJob?.cancel()
+        endingJob = scope.launch {
+            val fix = locator.sessionController.state.value.lastFix
+            val counter = updateCounter
+            updateCounter = (updateCounter + 1).coerceAtMost(MAX_UPDATE_COUNTER)
+            locator.settingsRepository.saveSessionCounter(updateCounter, System.currentTimeMillis() / 1000)
+            locator.bleAdvertiser.start(
+                BeaconPayload(
+                    senderId = sessionSenderId,
+                    latitude = fix?.latitude ?: 0.0,
+                    longitude = fix?.longitude ?: 0.0,
+                    flags = BeaconFlags.HAS_FULL_MESSAGE or BeaconFlags.CANCELLED or
+                        (if (fix == null) BeaconFlags.POSITION_UNKNOWN else 0),
+                    hopCount = 0,
+                    updateCounter = counter,
+                )
+            )
+            delay(STOP_ANNOUNCE_MILLIS)
+            endingJob = null
+            if (relayJob?.isActive != true) locator.bleAdvertiser.stop()
+            updateNotification()
+            stopIfIdle()
+        }
+        updateNotification()
     }
 
     /** @return true if a fix was obtained and broadcast, false if this cycle produced nothing. */
@@ -314,7 +361,7 @@ class ResQForegroundService : Service() {
         pruneJob = null
         locator.bleScanner.stop()
         locator.sessionController.setReceiving(false)
-        if (sendJob?.isActive != true) {
+        if (sendJob?.isActive != true && endingJob?.isActive != true) {
             locator.bleAdvertiser.stop()
             locator.gattServerManager.stop()
         }
@@ -322,6 +369,7 @@ class ResQForegroundService : Service() {
 
     private suspend fun relayCycle() {
         if (sendJob?.isActive == true) return // own SOS keeps the advertiser slot
+        if (endingJob?.isActive == true) return // the "stopped" beacon keeps it for a minute
         val nowSeconds = System.currentTimeMillis() / 1000
         val candidate = locator.sosLogRepository.mostUrgentRelayCandidate { id ->
             locator.settingsRepository.isOwnSenderId(id, nowSeconds)
@@ -363,7 +411,7 @@ class ResQForegroundService : Service() {
     }
 
     private fun updateNotification() {
-        if (sendJob?.isActive == true || scanJob?.isActive == true) {
+        if (sendJob?.isActive == true || scanJob?.isActive == true || endingJob?.isActive == true) {
             ContextCompat.getSystemService(this, android.app.NotificationManager::class.java)
                 ?.notify(FOREGROUND_NOTIFICATION_ID, buildNotification())
         }
@@ -373,10 +421,11 @@ class ResQForegroundService : Service() {
         this,
         isSending = sendJob?.isActive == true,
         isReceiving = scanJob?.isActive == true,
+        isEnding = endingJob?.isActive == true,
     )
 
     private fun stopIfIdle() {
-        if (sendJob?.isActive != true && scanJob?.isActive != true) {
+        if (sendJob?.isActive != true && scanJob?.isActive != true && endingJob?.isActive != true) {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
         }

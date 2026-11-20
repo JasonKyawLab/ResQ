@@ -28,10 +28,16 @@ object ResQNotifications {
         manager.createNotificationChannel(channel)
     }
 
-    fun build(context: Context, isSending: Boolean, isReceiving: Boolean): android.app.Notification {
+    fun build(
+        context: Context,
+        isSending: Boolean,
+        isReceiving: Boolean,
+        isEnding: Boolean = false,
+    ): android.app.Notification {
         ensureChannel(context)
 
         val title = when {
+            isEnding && !isSending -> context.getString(R.string.service_notification_title_ending)
             isSending && isReceiving -> context.getString(R.string.service_notification_title_both)
             isSending -> context.getString(R.string.service_notification_title_broadcasting)
             else -> context.getString(R.string.service_notification_title_listening)

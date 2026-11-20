@@ -27,8 +27,8 @@ private const val FETCH_JITTER_MAX_MILLIS = 3_000L
 /** What recording a sighting decided, and whether the caller should now connect for the full record. */
 data class SightingResult(val verdict: UpdateVerdict, val needsFetch: Boolean)
 
-/** How long a sighting stays in the log without a fresh re-sighting before it's pruned. */
-const val STALE_ENTRY_MAX_AGE_MILLIS = 60 * 60_000L // 1 hour
+/** How long a sighting stays in the log without a fresh re-sighting before it's pruned (see EntryLifecycle). */
+const val STALE_ENTRY_MAX_AGE_MILLIS = EntryLifecycle.DELETE_AFTER_MILLIS
 
 /**
  * Bridges raw BLE detections into the durable receiver log. A detection
@@ -50,7 +50,9 @@ class SosLogRepository(
     /** One connection at a time overall: simpler on the radio and far more reliable on cheap phones. */
     private val fetchGate = Semaphore(1)
 
-    fun observeLog(): Flow<List<SosLogEntity>> = dao.observeAll()
+    fun observeLog(): Flow<List<SosLogEntity>> = dao.observeVisible()
+
+    suspend fun dismiss(senderId: Int) = dao.dismiss(senderId)
 
     /**
      * Applies the once-only rules (see [UpdateRules]) and returns what happened, so the
@@ -185,6 +187,12 @@ class SosLogRepository(
     }
 
     /** Freshest sighting from someone else, used by the relay loop to pick what to re-advertise next. */
-    suspend fun mostUrgentRelayCandidate(isOwn: suspend (Int) -> Boolean): SosLogEntity? =
-        dao.getAllSnapshot().firstOrNull { !isOwn(it.senderId) }
+    suspend fun mostUrgentRelayCandidate(isOwn: suspend (Int) -> Boolean): SosLogEntity? {
+        val now = System.currentTimeMillis()
+        return dao.getAllSnapshot().firstOrNull { entry ->
+            val age = now - entry.lastSeenAtEpochMillis
+            val stage = EntryLifecycle.stage(entry.isCancelled, age, entry.sendIntervalMinutes)
+            !isOwn(entry.senderId) && EntryLifecycle.shouldRelay(stage, age, entry.dismissed)
+        }
+    }
 }

@@ -27,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -37,6 +38,8 @@ import com.resq.app.ui.components.ActionBanner
 import com.resq.app.ui.components.SignalBadge
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
+import com.resq.app.core.data.repository.EntryStage
+import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.SurfaceCard
 import com.resq.app.ui.theme.TextPrimary
 import com.resq.app.ui.theme.TextSecondary
@@ -60,6 +63,7 @@ fun ReceiverRoute(
         onToggleListening = {
             if (!uiState.permissionsGranted) onRequestPermissions() else viewModel.onToggleListening()
         },
+        onDismiss = viewModel::onDismiss,
         modifier = modifier,
     )
 }
@@ -70,6 +74,7 @@ private fun ReceiverScreen(
     onRequestPermissions: () -> Unit,
     onRequestBluetoothEnable: () -> Unit,
     onToggleListening: () -> Unit,
+    onDismiss: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -125,7 +130,7 @@ private fun ReceiverScreen(
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(state.entries, key = { it.senderId }) { entry ->
-                    SosLogCard(entry)
+                    SosLogCard(entry, onDismiss = { onDismiss(entry.senderId) })
                 }
             }
         }
@@ -155,10 +160,13 @@ private fun EmptyLogState(isListening: Boolean) {
 }
 
 @Composable
-private fun SosLogCard(entry: SosLogItemUi) {
+private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
+    // A marked-safe or archived entry is dimmed so a live one stands out.
+    val dimmed = entry.stage == EntryStage.MARKED_SAFE || entry.stage == EntryStage.ARCHIVED
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(if (dimmed) 0.6f else 1f)
             .background(SurfaceCard, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -186,6 +194,16 @@ private fun SosLogCard(entry: SosLogItemUi) {
             SignalBadge(entry.signalStrength)
         }
 
+        Text(
+            entry.statusText,
+            style = MaterialTheme.typography.labelMedium,
+            color = when (entry.stage) {
+                EntryStage.LIVE -> BeaconGreen
+                EntryStage.SIGNAL_LOST -> BeaconAmber
+                else -> TextSecondary
+            },
+        )
+
         Text(entry.message, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
 
         val clipboard = LocalClipboardManager.current
@@ -201,6 +219,10 @@ private fun SosLogCard(entry: SosLogItemUi) {
                 Text(entry.coordinateText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text("Last heard ${entry.lastSeenText}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }
+            Row {
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss", color = TextSecondary, fontWeight = FontWeight.SemiBold)
+            }
             TextButton(
                 onClick = {
                     clipboard.setText(AnnotatedString(entry.coordinateText))
@@ -211,6 +233,7 @@ private fun SosLogCard(entry: SosLogItemUi) {
                 },
             ) {
                 Text("Copy", color = SignalRed, fontWeight = FontWeight.SemiBold)
+            }
             }
         }
     }

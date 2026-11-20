@@ -9,6 +9,7 @@
     <string name="service_notification_channel_name">ResQ radio</string>
     <string name="service_notification_title_broadcasting">Broadcasting SOS</string>
     <string name="service_notification_title_listening">Listening for SOS</string>
+    <string name="service_notification_title_ending">Telling nearby phones you stopped</string>
     <string name="service_notification_title_both">Broadcasting &amp; listening</string>
     <string name="service_notification_stop_action">Stop</string>
 </resources>
