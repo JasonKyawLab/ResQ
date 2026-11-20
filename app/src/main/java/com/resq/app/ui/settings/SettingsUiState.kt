@@ -5,8 +5,8 @@ import com.resq.app.core.permissions.PermissionStatus
 
 data class SettingsUiState(
     val senderIdDisplay: String = "—",
-    /** Debug builds only: the saved SOS state. Null in release builds. */
-    val debugSessionLine: String? = null,
+    /** Debug builds only (empty in release): the saved SOS state, shown by a DebugPanel. */
+    val debugRows: List<com.resq.app.ui.components.DebugRow> = emptyList(),
     val locationNote: String = "",
     val sendInterval: BroadcastInterval = BroadcastInterval.DEFAULT,
     val batterySaverEnabled: Boolean = false,

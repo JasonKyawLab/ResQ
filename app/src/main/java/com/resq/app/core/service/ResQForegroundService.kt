@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.resq.app.core.ble.BeaconFlags
@@ -22,7 +23,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -32,6 +38,7 @@ private const val TAG = "ResQForegroundService"
 private const val RELAY_CYCLE_INTERVAL_MILLIS = 2 * 60_000L
 private const val STALE_PRUNE_INTERVAL_MILLIS = 10 * 60_000L
 private const val FIX_RETRY_BACKOFF_MILLIS = 30_000L
+private const val EDIT_DEBOUNCE_MILLIS = 2_000L
 
 /**
  * The one long-running component in the app. It owns three independent
@@ -65,6 +72,11 @@ class ResQForegroundService : Service() {
     private var sessionSenderId = 0
     private var updateCounter = 0
     private var sosStartedAtSeconds = 0L
+
+    // An edit to the message while sending asks for an immediate update. Conflated so a
+    // burst of requests is one update.
+    private val refreshSignal = Channel<Unit>(Channel.CONFLATED)
+    private var lastBroadcastMessage: String? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -127,11 +139,22 @@ class ResQForegroundService : Service() {
             sessionSenderId = session.senderId
             updateCounter = session.counter
             sosStartedAtSeconds = session.startedAtSeconds
+            lastBroadcastMessage = null
+            refreshSignal.tryReceive() // drop a request left over from an earlier SOS
+            watchMessageEdits()
+            var editRefresh = false
+            var nextFixAt = 0L // elapsedRealtime when the next real GPS fix is due
             while (true) {
-                val fixObtained = broadcastOwnFix()
+                val fixObtained = broadcastOwnFix(reuseLastFix = editRefresh)
                 val interval = locator.settingsRepository.effectiveSendInterval()
+                // Only a real fix restarts the timer. An edit update must not push the next
+                // position refresh later (with Battery saver that could be an hour).
+                if (fixObtained && !editRefresh) nextFixAt = SystemClock.elapsedRealtime() + interval.millis
+                editRefresh = false
                 if (fixObtained) {
-                    delay(interval.millis)
+                    // Waits until the next fix is due, or ends early when the message was edited.
+                    val wait = (nextFixAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+                    editRefresh = withTimeoutOrNull(wait) { refreshSignal.receive() } != null
                 } else {
                     // No fix this cycle. Two different failure shapes need two
                     // different retry speeds:
@@ -155,11 +178,29 @@ class ResQForegroundService : Service() {
         }
     }
 
+    /**
+     * Child of the send job, so Stop cancels it and a pending edit cannot fire an update after
+     * the SOS has ended. Waits until typing pauses, then asks for one immediate update.
+     */
+    @OptIn(FlowPreview::class)
+    private fun CoroutineScope.watchMessageEdits() {
+        launch {
+            locator.settingsRepository.settings
+                .map { SosMessage.compose(it.locationNote, it.sosMessageDraft) }
+                .distinctUntilChanged()
+                .debounce(EDIT_DEBOUNCE_MILLIS)
+                .collect { composed ->
+                    val last = lastBroadcastMessage
+                    if (last != null && composed != last) refreshSignal.trySend(Unit)
+                }
+        }
+    }
+
     private fun stopSending() {
         sendJob?.cancel()
         sendJob = null
         locator.sessionController.setSending(false)
-        scope.launch { locator.settingsRepository.endSession() }
+        scope.launch { locator.settingsRepository.endSession(System.currentTimeMillis() / 1000) }
         // Hand the advertiser back to the relay loop, if it's running.
         if (relayJob?.isActive != true) {
             locator.bleAdvertiser.stop()
@@ -167,12 +208,15 @@ class ResQForegroundService : Service() {
     }
 
     /** @return true if a fix was obtained and broadcast, false if this cycle produced nothing. */
-    private suspend fun broadcastOwnFix(): Boolean {
+    private suspend fun broadcastOwnFix(reuseLastFix: Boolean = false): Boolean {
         if (!PermissionManager.hasLocationPermissions(this)) {
             Logger.w(TAG) { "Location permission missing this cycle" }
             return false
         }
-        val fix = locator.locationProvider.requestSingleFix()
+        // After a message edit the update goes out at once with the last known fix (its own
+        // position time is still sent), instead of waiting seconds for a new GPS fix.
+        val fix = (if (reuseLastFix) locator.sessionController.state.value.lastFix else null)
+            ?: locator.locationProvider.requestSingleFix()
         if (fix == null) {
             Logger.w(TAG) { "No GPS fix available this cycle" }
             return false
@@ -180,6 +224,7 @@ class ResQForegroundService : Service() {
         val senderId = sessionSenderId
         val saved = locator.settingsRepository.settings.first()
         val message = SosMessage.compose(saved.locationNote, saved.sosMessageDraft)
+        lastBroadcastMessage = message
         val batteryPercent = locator.batteryPercent()
         locator.sessionController.recordBatteryPercent(batteryPercent)
 

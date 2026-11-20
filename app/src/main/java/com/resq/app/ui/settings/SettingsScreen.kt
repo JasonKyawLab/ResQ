@@ -45,6 +45,7 @@ import com.resq.app.core.permissions.PermissionStatus
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.StatusRow
 import com.resq.app.ui.components.rememberDraftField
+import com.resq.app.ui.components.DebugPanel
 import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
@@ -268,10 +269,7 @@ private fun SettingsScreen(
                 Text("Last SOS ID", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(state.senderIdDisplay, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Medium)
             }
-            state.debugSessionLine?.let {
-                Spacer(Modifier.height(6.dp))
-                Text("Debug · saved SOS: $it", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-            }
+            DebugPanel(title = "Saved SOS", rows = state.debugRows)
         }
 
         Text(

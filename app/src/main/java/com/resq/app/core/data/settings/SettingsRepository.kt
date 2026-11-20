@@ -69,6 +69,19 @@ class SettingsRepository(private val context: Context) {
      * remembered for [OWN_ID_MEMORY_SECONDS] so our own SOS echoed back is not shown as someone else's.
      */
     suspend fun beginSession(nowSeconds: Long): SosSession {
+        val before = context.dataStore.data.first()
+        val previousId = before[Keys.SENDER_ID] ?: 0
+        if (previousId != 0 && SessionResume.canContinue(before[Keys.SESSION_UPDATED] ?: 0L, nowSeconds)) {
+            // Start pressed again soon after Stop: the same SOS carries on, not a second one.
+            val started = before[Keys.SESSION_STARTED] ?: nowSeconds
+            val counter = before[Keys.SESSION_COUNTER] ?: 0
+            context.dataStore.edit {
+                it[Keys.SESSION_ACTIVE] = true
+                it[Keys.SESSION_UPDATED] = nowSeconds
+                it[Keys.RECENT_OWN_IDS] = OwnSessionIds.remember(it[Keys.RECENT_OWN_IDS], previousId, nowSeconds)
+            }
+            return SosSession(previousId, started, counter, nowSeconds)
+        }
         val id = OwnSessionIds.newSenderId()
         context.dataStore.edit {
             it[Keys.SENDER_ID] = id
@@ -104,8 +117,13 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** The user pressed Stop: nothing to resume. The ID stays remembered as ours. */
-    suspend fun endSession() {
-        context.dataStore.edit { it[Keys.SESSION_ACTIVE] = false }
+    suspend fun endSession(stoppedAtSeconds: Long? = null) {
+        context.dataStore.edit {
+            it[Keys.SESSION_ACTIVE] = false
+            // The Stop time starts the 30 minute window in which Start continues this SOS.
+            // Cleaning up an expired session passes null and leaves the time alone.
+            if (stoppedAtSeconds != null) it[Keys.SESSION_UPDATED] = stoppedAtSeconds
+        }
     }
 
     /** True for the running SOS's ID and any of our IDs from the last 72 hours. */

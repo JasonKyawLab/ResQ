@@ -62,3 +62,21 @@ class SessionResumeTest {
         assertFalse(SessionResume.isResumable(true, 2000, 1000))
     }
 }
+
+class SessionContinueTest {
+    @Test fun startSoonAfterStopContinues() =
+        assertTrue(SessionResume.canContinue(1000, 1000 + 60))
+
+    @Test fun windowEdgeIsInclusive() {
+        assertTrue(SessionResume.canContinue(1000, 1000 + CONTINUE_WINDOW_SECONDS))
+        assertFalse(SessionResume.canContinue(1000, 1001 + CONTINUE_WINDOW_SECONDS))
+    }
+
+    @Test fun neverSavedOrClockBackwardsDoesNotContinue() {
+        assertFalse(SessionResume.canContinue(0, 500))
+        assertFalse(SessionResume.canContinue(2000, 1000))
+    }
+
+    @Test fun separateEmergencyLaterInTheDayGetsANewId() =
+        assertFalse(SessionResume.canContinue(1000, 1000 + 3 * 3600))
+}

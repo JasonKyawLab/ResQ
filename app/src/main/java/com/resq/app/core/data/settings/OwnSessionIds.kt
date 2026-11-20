@@ -17,7 +17,17 @@ data class SosSession(
 /** A saved SOS that was never stopped is resumed only if it was written within this long. */
 const val RESUME_WINDOW_SECONDS: Long = 12 * 3600L
 
+/**
+ * Pressing Start within this long of the last activity (Stop, or the last broadcast) continues the same
+ * SOS: same ID, counter carried on. A panicking user who taps Stop and Start does not leave a pile
+ * of separate entries on the rescuers' phones.
+ */
+const val CONTINUE_WINDOW_SECONDS: Long = 30 * 60L
+
 object SessionResume {
+    fun canContinue(previousUpdatedSeconds: Long, nowSeconds: Long): Boolean =
+        previousUpdatedSeconds > 0 && nowSeconds - previousUpdatedSeconds in 0..CONTINUE_WINDOW_SECONDS
+
     fun isResumable(active: Boolean, updatedAtSeconds: Long, nowSeconds: Long): Boolean =
         active && updatedAtSeconds > 0 && nowSeconds - updatedAtSeconds in 0..RESUME_WINDOW_SECONDS
 }

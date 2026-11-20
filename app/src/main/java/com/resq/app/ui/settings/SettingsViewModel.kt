@@ -12,6 +12,8 @@ import com.resq.app.core.location.LocationCapability
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import kotlinx.coroutines.flow.SharingStarted
+import com.resq.app.ui.components.DebugRow
+import com.resq.app.ui.components.debugRows
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -27,10 +29,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     ) { settings, _ ->
         SettingsUiState(
             senderIdDisplay = if (settings.senderId == 0) "—" else "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
-            debugSessionLine = if (com.resq.app.BuildConfig.DEBUG) {
-                "active=${if (settings.sessionActive) "yes" else "no"}  counter=${settings.sessionCounter}  " +
-                    "saved ${if (settings.sessionUpdatedSeconds == 0L) "never" else "${(System.currentTimeMillis() / 1000 - settings.sessionUpdatedSeconds) / 60} min ago"}"
-            } else null,
+            debugRows = debugRows {
+                val now = System.currentTimeMillis() / 1000
+                listOf(
+                    DebugRow("Active", if (settings.sessionActive) "yes" else "no"),
+                    DebugRow("Update counter", settings.sessionCounter.toString()),
+                    DebugRow(
+                        "Saved",
+                        if (settings.sessionUpdatedSeconds == 0L) "never" else "${(now - settings.sessionUpdatedSeconds) / 60} min ago",
+                    ),
+                    DebugRow("Send interval", (if (settings.batterySaverEnabled) BroadcastInterval.BATTERY_SAVER else settings.sendInterval).label),
+                )
+            },
             locationNote = settings.locationNote,
             sendInterval = settings.sendInterval,
             batterySaverEnabled = settings.batterySaverEnabled,

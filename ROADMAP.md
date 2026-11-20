@@ -128,10 +128,16 @@ pass, before the build is signed and uploaded.
     so an SOS resumed after a kill is still the same SOS.
   - The phone remembers its recent own IDs (about 72 hours), so a relay that
     echoes an old session back is still recognised as its own.
-  - Stop and then Start again looks like a new person to other phones: the old
-    entry shows as cancelled and a new one appears. Editing the message while
-    sending does not need a restart.
-  - The sender ID shown in Settings becomes "current session ID".
+  - **Start within 30 minutes of Stop continues the same SOS** (same ID, counter
+    carried on, original start time kept). A panicking user who taps Stop and
+    Start repeatedly leaves one entry on the rescuers' phones, not a pile. A newer
+    non-cancelled update must clear a "cancelled" mark. After 30 minutes a Start is a
+    new SOS with a new ID. Built, with unit tests.
+  - **Editing the message while sending** sends an update about 2 seconds after
+    typing stops (counter goes up, last known fix reused, its own position time still
+    sent). Stop cancels a pending edit so nothing goes out after the SOS ends.
+    Built; the timing needs a real-phone check.
+  - The sender ID shown in Settings is now "Last SOS ID" (built).
   - The privacy policy and the Play data safety answer say the ID changes at
     each Start.
 - [ ] **"Clear all received SOS"** in Settings, with a confirmation dialog.
@@ -140,7 +146,10 @@ pass, before the build is signed and uploaded.
       is coming, so never word it that way. If none is heard, say nothing
       alarming ("No relay heard yet" is fine, never "nobody heard you"). This
       needs the phone to scan while it is sending (a low-power scan, small
-      battery cost).
+      battery cost). Decision: keep this small echo-check scan running while
+      sending even when the user's Scan switch is off, so the indicator is not
+      misleading; or grey the indicator out. Never show "nobody around" just
+      because the scanner is off.
 - [ ] **A cancel shows as "Marked safe by sender (unverified)"**, dimmed and
       sorted lower, never silently deleted. Dismiss removes it.
 - [x] **No checksum in the beacon.** Bluetooth already checks for corruption. The
