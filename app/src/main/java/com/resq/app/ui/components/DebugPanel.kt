@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,6 +15,9 @@ import com.resq.app.BuildConfig
 import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.TextPrimary
 import com.resq.app.ui.theme.TextSecondary
+
+/** A testing button in a [DebugPanel], for example "Add demo SOS entries". */
+class DebugAction(val label: String, val onClick: () -> Unit)
 
 /** One label/value line in a [DebugPanel]. */
 data class DebugRow(val label: String, val value: String)
@@ -32,14 +36,28 @@ inline fun debugRows(build: () -> List<DebugRow>): List<DebugRow> =
  * UI state a `debugRows` list and put a `DebugPanel` where it should appear.
  */
 @Composable
-fun DebugPanel(title: String, rows: List<DebugRow>, modifier: Modifier = Modifier) {
-    if (!BuildConfig.DEBUG || rows.isEmpty()) return
+fun DebugPanel(
+    title: String,
+    rows: List<DebugRow> = emptyList(),
+    modifier: Modifier = Modifier,
+    actions: List<DebugAction> = emptyList(),
+) {
+    if (!BuildConfig.DEBUG || (rows.isEmpty() && actions.isEmpty())) return
     Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("DEBUG · $title", style = MaterialTheme.typography.labelSmall, color = BeaconAmber)
         rows.forEach { row ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(row.label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
                 Text(row.value, style = MaterialTheme.typography.labelSmall, color = TextPrimary)
+            }
+        }
+        if (actions.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                actions.forEach { action ->
+                    TextButton(onClick = action.onClick) {
+                        Text(action.label, style = MaterialTheme.typography.labelMedium, color = BeaconAmber)
+                    }
+                }
             }
         }
     }

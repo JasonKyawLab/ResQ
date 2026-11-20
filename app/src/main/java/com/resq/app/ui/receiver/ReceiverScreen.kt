@@ -64,6 +64,7 @@ fun ReceiverRoute(
             if (!uiState.permissionsGranted) onRequestPermissions() else viewModel.onToggleListening()
         },
         onDismiss = viewModel::onDismiss,
+        debugActions = viewModel.debugActions,
         modifier = modifier,
     )
 }
@@ -75,6 +76,7 @@ private fun ReceiverScreen(
     onRequestBluetoothEnable: () -> Unit,
     onToggleListening: () -> Unit,
     onDismiss: (Int) -> Unit,
+    debugActions: List<com.resq.app.ui.components.DebugAction>,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -103,6 +105,8 @@ private fun ReceiverScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = if (state.isListening) BeaconGreen else TextSecondary,
         )
+
+        com.resq.app.ui.components.DebugPanel(title = "Scan screen", actions = debugActions)
 
         when {
             !state.permissionsGranted -> {
@@ -161,18 +165,19 @@ private fun EmptyLogState(isListening: Boolean) {
 
 @Composable
 private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
-    // A marked-safe or archived entry is dimmed so a live one stands out.
+    // A marked-safe or archived entry's text is dimmed so a live one stands out. The buttons are not:
+    // Dismiss and Copy stay easy to see and tap on every card.
     val dimmed = entry.stage == EntryStage.MARKED_SAFE || entry.stage == EntryStage.ARCHIVED
+    val contentAlpha = if (dimmed) 0.6f else 1f
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (dimmed) 0.6f else 1f)
             .background(SurfaceCard, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().alpha(contentAlpha),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -196,6 +201,7 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
 
         Text(
             entry.statusText,
+            modifier = Modifier.alpha(contentAlpha),
             style = MaterialTheme.typography.labelMedium,
             color = when (entry.stage) {
                 EntryStage.LIVE -> BeaconGreen
@@ -204,7 +210,12 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
             },
         )
 
-        Text(entry.message, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+        Text(
+            entry.message,
+            modifier = Modifier.alpha(contentAlpha),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextPrimary,
+        )
 
         val clipboard = LocalClipboardManager.current
         val context = LocalContext.current
@@ -215,7 +226,7 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
         ) {
             // Stacked, not side by side: with a large system font the two no longer
             // fit on one line and the time used to wrap into the coordinates.
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f).alpha(contentAlpha)) {
                 Text(entry.coordinateText, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text("Last heard ${entry.lastSeenText}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }

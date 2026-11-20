@@ -54,6 +54,10 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReceiverUiState())
 
+    /** Testing buttons (debug builds only; the release build returns none). */
+    val debugActions: List<com.resq.app.ui.components.DebugAction> =
+        com.resq.app.debug.DemoTools.actions(locator)
+
     fun onToggleListening() {
         val context = getApplication<Application>()
         if (uiState.value.isListening) {

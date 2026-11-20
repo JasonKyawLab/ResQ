@@ -31,6 +31,10 @@ interface SosLogDao {
     @Query("DELETE FROM sos_log WHERE lastSeenAtEpochMillis < :olderThanEpochMillis")
     suspend fun pruneStaleEntries(olderThanEpochMillis: Long)
 
+    /** Removes entries whose sender ID is in the range. Used by the debug demo helper. */
+    @Query("DELETE FROM sos_log WHERE senderId BETWEEN :from AND :to")
+    suspend fun deleteRange(from: Int, to: Int)
+
     @Query("DELETE FROM sos_log")
     suspend fun clearAll()
 }
