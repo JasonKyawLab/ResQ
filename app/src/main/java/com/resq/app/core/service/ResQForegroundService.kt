@@ -12,6 +12,7 @@ import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.MAX_UPDATE_COUNTER
 import com.resq.app.core.ble.SosRecord
 import com.resq.app.core.data.model.SosMessage
+import com.resq.app.core.data.settings.SosSession
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.permissions.ReadinessRefreshTrigger
@@ -67,7 +68,23 @@ class ResQForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent == null) {
+            // Android restarted us after killing the app (START_STICKY): there is no
+            // action. If an SOS was running and Stop was never pressed, carry it on
+            // with the same ID, counter and Start time instead of silently ending it.
+            ensureForeground()
+            scope.launch {
+                val saved = locator.settingsRepository.activeSession()
+                if (saved != null) {
+                    startSending(resume = saved)
+                    updateNotification()
+                } else {
+                    stopIfIdle()
+                }
+            }
+            return START_STICKY
+        }
+        when (intent.action) {
             ACTION_START_SENDING -> startSending()
             ACTION_STOP_SENDING -> stopSending()
             ACTION_START_RECEIVING -> startReceiving()
@@ -97,14 +114,14 @@ class ResQForegroundService : Service() {
 
     // --- Sending -------------------------------------------------------
 
-    private fun startSending() {
+    private fun startSending(resume: SosSession? = null) {
         if (sendJob?.isActive == true) return
         ensureForeground()
         locator.sessionController.setSending(true)
         locator.gattServerManager.start()
 
         sendJob = scope.launch {
-            val session = locator.settingsRepository.beginSession(System.currentTimeMillis() / 1000)
+            val session = resume ?: locator.settingsRepository.beginSession(System.currentTimeMillis() / 1000)
             sessionSenderId = session.senderId
             updateCounter = session.counter
             sosStartedAtSeconds = session.startedAtSeconds
