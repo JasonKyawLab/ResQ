@@ -22,6 +22,10 @@ data class ResQSettings(
     val sosMessageDraft: String,
     /** Saved "where am I" line (room / floor / building), sent ahead of every SOS message. */
     val locationNote: String,
+    /** Saved SOS state, shown on the debug line in Settings. */
+    val sessionActive: Boolean = false,
+    val sessionCounter: Int = 0,
+    val sessionUpdatedSeconds: Long = 0L,
 )
 
 /**
@@ -40,6 +44,7 @@ class SettingsRepository(private val context: Context) {
         val LOCATION_NOTE = stringPreferencesKey("location_note")
         val SESSION_STARTED = longPreferencesKey("session_started_seconds")
         val SESSION_COUNTER = intPreferencesKey("session_counter")
+        val SESSION_UPDATED = longPreferencesKey("session_updated_seconds")
         val SESSION_ACTIVE = booleanPreferencesKey("session_active")
         val RECENT_OWN_IDS = stringPreferencesKey("recent_own_ids")
     }
@@ -53,6 +58,9 @@ class SettingsRepository(private val context: Context) {
             batterySaverEnabled = prefs[Keys.BATTERY_SAVER_ENABLED] ?: false,
             sosMessageDraft = prefs[Keys.SOS_MESSAGE_DRAFT] ?: "",
             locationNote = prefs[Keys.LOCATION_NOTE] ?: "",
+            sessionActive = prefs[Keys.SESSION_ACTIVE] ?: false,
+            sessionCounter = prefs[Keys.SESSION_COUNTER] ?: 0,
+            sessionUpdatedSeconds = prefs[Keys.SESSION_UPDATED] ?: 0L,
         )
     }
 
@@ -66,6 +74,7 @@ class SettingsRepository(private val context: Context) {
             it[Keys.SENDER_ID] = id
             it[Keys.SESSION_STARTED] = nowSeconds
             it[Keys.SESSION_COUNTER] = 0
+            it[Keys.SESSION_UPDATED] = nowSeconds
             it[Keys.SESSION_ACTIVE] = true
             it[Keys.RECENT_OWN_IDS] = OwnSessionIds.remember(it[Keys.RECENT_OWN_IDS], id, nowSeconds)
         }
@@ -73,16 +82,25 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** The SOS that was running when the app was last stopped without pressing Stop, or null. */
-    suspend fun activeSession(): SosSession? {
+    suspend fun activeSession(nowSeconds: Long): SosSession? {
         val prefs = context.dataStore.data.first()
-        if (prefs[Keys.SESSION_ACTIVE] != true) return null
+        val active = prefs[Keys.SESSION_ACTIVE] == true
+        val updated = prefs[Keys.SESSION_UPDATED] ?: 0L
+        if (!SessionResume.isResumable(active, updated, nowSeconds)) {
+            // Too old to resume: clear the flag so it never wakes up later by surprise.
+            if (active) endSession()
+            return null
+        }
         val id = prefs[Keys.SENDER_ID] ?: return null
         if (id == 0) return null
-        return SosSession(id, prefs[Keys.SESSION_STARTED] ?: 0L, prefs[Keys.SESSION_COUNTER] ?: 0)
+        return SosSession(id, prefs[Keys.SESSION_STARTED] ?: 0L, prefs[Keys.SESSION_COUNTER] ?: 0, updated)
     }
 
-    suspend fun saveSessionCounter(counter: Int) {
-        context.dataStore.edit { it[Keys.SESSION_COUNTER] = counter }
+    suspend fun saveSessionCounter(counter: Int, nowSeconds: Long) {
+        context.dataStore.edit {
+            it[Keys.SESSION_COUNTER] = counter
+            it[Keys.SESSION_UPDATED] = nowSeconds
+        }
     }
 
     /** The user pressed Stop: nothing to resume. The ID stays remembered as ours. */

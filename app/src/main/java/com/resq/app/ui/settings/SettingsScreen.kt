@@ -268,6 +268,10 @@ private fun SettingsScreen(
                 Text("Last SOS ID", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(state.senderIdDisplay, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Medium)
             }
+            state.debugSessionLine?.let {
+                Spacer(Modifier.height(6.dp))
+                Text("Debug · saved SOS: $it", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            }
         }
 
         Text(

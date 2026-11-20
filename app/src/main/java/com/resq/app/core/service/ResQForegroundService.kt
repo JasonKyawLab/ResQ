@@ -68,13 +68,13 @@ class ResQForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) {
-            // Android restarted us after killing the app (START_STICKY): there is no
-            // action. If an SOS was running and Stop was never pressed, carry it on
-            // with the same ID, counter and Start time instead of silently ending it.
+        if (intent == null || intent.action == ACTION_RESUME_SENDING) {
+            // Either Android restarted us after killing the app (START_STICKY, no action)
+            // or the app was opened while a recent SOS was never stopped. Carry it on with
+            // the same ID, counter and Start time instead of silently leaving it ended.
             ensureForeground()
             scope.launch {
-                val saved = locator.settingsRepository.activeSession()
+                val saved = locator.settingsRepository.activeSession(System.currentTimeMillis() / 1000)
                 if (saved != null) {
                     startSending(resume = saved)
                     updateNotification()
@@ -114,6 +114,7 @@ class ResQForegroundService : Service() {
 
     // --- Sending -------------------------------------------------------
 
+    @Synchronized
     private fun startSending(resume: SosSession? = null) {
         if (sendJob?.isActive == true) return
         ensureForeground()
@@ -186,7 +187,7 @@ class ResQForegroundService : Service() {
 
         val counter = updateCounter
         updateCounter = (updateCounter + 1).coerceAtMost(MAX_UPDATE_COUNTER)
-        locator.settingsRepository.saveSessionCounter(updateCounter)
+        locator.settingsRepository.saveSessionCounter(updateCounter, System.currentTimeMillis() / 1000)
 
         locator.bleAdvertiser.start(
             BeaconPayload(
@@ -324,6 +325,7 @@ class ResQForegroundService : Service() {
         const val ACTION_STOP_SENDING = "com.resq.app.action.STOP_SENDING"
         const val ACTION_START_RECEIVING = "com.resq.app.action.START_RECEIVING"
         const val ACTION_STOP_RECEIVING = "com.resq.app.action.STOP_RECEIVING"
+        const val ACTION_RESUME_SENDING = "com.resq.app.action.RESUME_SENDING"
         const val ACTION_STOP_ALL = "com.resq.app.action.STOP_ALL"
 
         private fun start(context: Context, action: String) {
@@ -332,6 +334,7 @@ class ResQForegroundService : Service() {
         }
 
         fun startSending(context: Context) = start(context, ACTION_START_SENDING)
+        fun resumeSending(context: Context) = start(context, ACTION_RESUME_SENDING)
         fun stopSending(context: Context) = start(context, ACTION_STOP_SENDING)
         fun startReceiving(context: Context) = start(context, ACTION_START_RECEIVING)
         fun stopReceiving(context: Context) = start(context, ACTION_STOP_RECEIVING)

@@ -27,6 +27,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     ) { settings, _ ->
         SettingsUiState(
             senderIdDisplay = if (settings.senderId == 0) "—" else "#" + Integer.toHexString(settings.senderId).uppercase().takeLast(6),
+            debugSessionLine = if (com.resq.app.BuildConfig.DEBUG) {
+                "active=${if (settings.sessionActive) "yes" else "no"}  counter=${settings.sessionCounter}  " +
+                    "saved ${if (settings.sessionUpdatedSeconds == 0L) "never" else "${(System.currentTimeMillis() / 1000 - settings.sessionUpdatedSeconds) / 60} min ago"}"
+            } else null,
             locationNote = settings.locationNote,
             sendInterval = settings.sendInterval,
             batterySaverEnabled = settings.batterySaverEnabled,

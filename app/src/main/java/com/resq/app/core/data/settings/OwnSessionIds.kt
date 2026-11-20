@@ -6,7 +6,21 @@ import kotlin.random.Random
 const val OWN_ID_MEMORY_SECONDS: Long = 72 * 3600L
 
 /** One SOS session: a random ID chosen at Start, a counter that goes up per update, and the Start time. */
-data class SosSession(val senderId: Int, val startedAtSeconds: Long, val counter: Int)
+data class SosSession(
+    val senderId: Int,
+    val startedAtSeconds: Long,
+    val counter: Int,
+    /** When the saved record was last written, so an old forgotten one is not resumed. */
+    val updatedAtSeconds: Long = startedAtSeconds,
+)
+
+/** A saved SOS that was never stopped is resumed only if it was written within this long. */
+const val RESUME_WINDOW_SECONDS: Long = 12 * 3600L
+
+object SessionResume {
+    fun isResumable(active: Boolean, updatedAtSeconds: Long, nowSeconds: Long): Boolean =
+        active && updatedAtSeconds > 0 && nowSeconds - updatedAtSeconds in 0..RESUME_WINDOW_SECONDS
+}
 
 /**
  * Plain-Kotlin helpers for the "recent own IDs" list, so the rules can be unit tested

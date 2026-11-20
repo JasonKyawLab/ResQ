@@ -44,3 +44,21 @@ class OwnSessionIdsTest {
         assertNotEquals(true, OwnSessionIds.isOwn("", 1, 0))
     }
 }
+
+class SessionResumeTest {
+    @Test fun recentActiveSessionResumes() =
+        assertTrue(SessionResume.isResumable(true, 1000, 1000 + 3600))
+
+    @Test fun stoppedSessionDoesNotResume() =
+        assertFalse(SessionResume.isResumable(false, 1000, 1100))
+
+    @Test fun exactlyTwelveHoursStillResumesButOneSecondMoreDoesNot() {
+        assertTrue(SessionResume.isResumable(true, 0 + 1, 1 + RESUME_WINDOW_SECONDS))
+        assertFalse(SessionResume.isResumable(true, 1, 2 + RESUME_WINDOW_SECONDS))
+    }
+
+    @Test fun neverSavedOrClockBackwardsDoesNotResume() {
+        assertFalse(SessionResume.isResumable(true, 0, 500))
+        assertFalse(SessionResume.isResumable(true, 2000, 1000))
+    }
+}
