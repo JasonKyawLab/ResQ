@@ -1,5 +1,6 @@
 package com.resq.app.core.data.repository
 
+import android.os.SystemClock
 import com.resq.app.core.ble.BeaconDetection
 import com.resq.app.core.ble.GattClientManager
 import com.resq.app.core.ble.SosRecord
@@ -41,6 +42,15 @@ class SosLogRepository(
                 firstSeenAtEpochMillis = existing?.firstSeenAtEpochMillis ?: detection.seenAtEpochMillis,
                 lastSeenAtEpochMillis = detection.seenAtEpochMillis,
                 hasFullMessage = existing?.hasFullMessage ?: false,
+                updateCounter = detection.payload.updateCounter,
+                isRelayed = detection.payload.isRelayed,
+                isCancelled = detection.payload.isCancelled,
+                positionUnknown = detection.payload.positionUnknown,
+                positionTimeSeconds = existing?.positionTimeSeconds,
+                sosStartedSeconds = existing?.sosStartedSeconds,
+                sendIntervalMinutes = existing?.sendIntervalMinutes,
+                lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                dismissed = existing?.dismissed ?: false,
             )
         )
     }
@@ -69,6 +79,15 @@ class SosLogRepository(
                 firstSeenAtEpochMillis = existing?.firstSeenAtEpochMillis ?: now,
                 lastSeenAtEpochMillis = now,
                 hasFullMessage = true,
+                updateCounter = existing?.updateCounter ?: 0,
+                isRelayed = existing?.isRelayed ?: false,
+                isCancelled = existing?.isCancelled ?: false,
+                positionUnknown = existing?.positionUnknown ?: false,
+                positionTimeSeconds = record.positionTimeSeconds,
+                sosStartedSeconds = record.sosStartedSeconds,
+                sendIntervalMinutes = record.sendIntervalMinutes,
+                lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                dismissed = existing?.dismissed ?: false,
             )
         )
     }

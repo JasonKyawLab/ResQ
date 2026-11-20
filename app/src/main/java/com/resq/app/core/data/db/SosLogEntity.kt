@@ -1,5 +1,6 @@
 package com.resq.app.core.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -23,4 +24,21 @@ data class SosLogEntity(
     val lastSeenAtEpochMillis: Long,
     /** True once we've pulled the full [com.resq.app.core.ble.SosRecord], not just the beacon. */
     val hasFullMessage: Boolean,
+    // --- Added in database version 2 (see Migrations) ---
+    /** The sender's update counter for the newest update we hold; decides "newer / same / older". */
+    @ColumnInfo(defaultValue = "0") val updateCounter: Int = 0,
+    /** True when what we heard was itself passed on by another phone (shown as "Relayed"). */
+    @ColumnInfo(defaultValue = "0") val isRelayed: Boolean = false,
+    /** The sender pressed Stop; shown dimmed as "Marked safe by sender (unverified)". */
+    @ColumnInfo(defaultValue = "0") val isCancelled: Boolean = false,
+    /** The sender had no GPS fix yet; latitude and longitude carry no meaning. */
+    @ColumnInfo(defaultValue = "0") val positionUnknown: Boolean = false,
+    /** Sender-clock times and interval from the record extras; null when not sent. */
+    val positionTimeSeconds: Long? = null,
+    val sosStartedSeconds: Long? = null,
+    val sendIntervalMinutes: Int? = null,
+    /** SystemClock.elapsedRealtime() at the last sighting: immune to clock changes while running. */
+    @ColumnInfo(defaultValue = "0") val lastSeenElapsedMillis: Long = 0L,
+    /** The receiver dismissed this entry; kept so a repeat of the same update does not bring it back. */
+    @ColumnInfo(defaultValue = "0") val dismissed: Boolean = false,
 )

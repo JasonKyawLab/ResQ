@@ -6,12 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 /**
- * version = 1 for v1. A future schema change adds a `Migration` and
- * bumps this number rather than falling back to destructive migration —
+ * Version 2 added the update-counter / cancel / position-time columns (MIGRATION_1_2).
+ * A future schema change adds a `Migration` and bumps this number rather than falling back to destructive migration —
  * the receiver log is the one piece of local evidence a rescuer might
  * need to recover after an app update.
  */
-@Database(entities = [SosLogEntity::class], version = 1, exportSchema = true)
+@Database(entities = [SosLogEntity::class], version = 2, exportSchema = true)
 abstract class ResQDatabase : RoomDatabase() {
 
     abstract fun sosLogDao(): SosLogDao
@@ -26,7 +26,7 @@ abstract class ResQDatabase : RoomDatabase() {
                     context.applicationContext,
                     ResQDatabase::class.java,
                     "resq.db",
-                ).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2).build().also { instance = it }
             }
     }
 }

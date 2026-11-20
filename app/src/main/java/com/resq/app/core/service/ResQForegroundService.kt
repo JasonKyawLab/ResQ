@@ -275,11 +275,12 @@ class ResQForegroundService : Service() {
                 senderId = candidate.senderId,
                 latitude = candidate.latitude,
                 longitude = candidate.longitude,
-                flags = BeaconFlags.HAS_FULL_MESSAGE or BeaconFlags.IS_RELAYED,
+                flags = BeaconFlags.HAS_FULL_MESSAGE or BeaconFlags.IS_RELAYED or
+                    (if (candidate.isCancelled) BeaconFlags.CANCELLED else 0) or
+                    (if (candidate.positionUnknown) BeaconFlags.POSITION_UNKNOWN else 0),
                 hopCount = candidate.hopCount + 1,
-                // The original sender's counter is not saved yet (the log has no column for
-                // it), so a relay still derives one. Replaced when the log learns the counter.
-                updateCounter = (System.currentTimeMillis() / 1000 % (MAX_UPDATE_COUNTER + 1)).toInt(),
+                // The original sender's counter, so every phone can tell this is the same update.
+                updateCounter = candidate.updateCounter,
             )
         )
         locator.gattServerManager.updateRecord(
@@ -290,6 +291,9 @@ class ResQForegroundService : Service() {
                 message = candidate.message,
                 batteryPercent = candidate.batteryPercent,
                 hopCount = candidate.hopCount + 1,
+                positionTimeSeconds = candidate.positionTimeSeconds,
+                sosStartedSeconds = candidate.sosStartedSeconds,
+                sendIntervalMinutes = candidate.sendIntervalMinutes,
             )
         )
     }
