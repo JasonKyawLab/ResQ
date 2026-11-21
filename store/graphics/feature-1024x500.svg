@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- The 1024x500 graphic sits in the middle band (y 262 to 762) of a square, which is then cropped from the centre. -->
+  <rect width="1024" height="1024" fill="#000000"/>
+  <g transform="translate(0 262)">
+  <g transform="translate(250 250) scale(6.2) translate(-54 -54.5)"><g fill="#FF3B30"><circle cx="37.3" cy="40" r="3"/><circle cx="47.2" cy="40" r="3"/><circle cx="56.9" cy="40" r="3"/><rect x="34.6" y="51.3" width="11" height="6" rx="3"/><rect x="48.6" y="51.3" width="11" height="6" rx="3"/><rect x="62.5" y="51.3" width="11" height="6" rx="3"/><circle cx="51.4" cy="68" r="3"/><circle cx="61" cy="68" r="3"/><circle cx="70.7" cy="68" r="3"/></g></g>
+  <text x="470" y="238" fill="#FFFFFF" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="132" font-weight="700">Res<tspan fill="#FF3B30">Q</tspan></text>
+  <text x="474" y="305" fill="#E6E6E6" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="40" font-weight="500">Offline SOS beacon</text>
+  <text x="474" y="358" fill="#9A9A9A" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="30">Over Bluetooth. No signal needed.</text>
+  </g>
+</svg>
