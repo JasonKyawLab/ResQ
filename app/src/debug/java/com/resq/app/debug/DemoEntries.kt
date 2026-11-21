@@ -26,11 +26,12 @@ object DemoEntries {
             hop: Int = 0,
             cancelled: Boolean = false,
             hasFullMessage: Boolean = true,
+            positionUnknown: Boolean = false,
         ) = SosLogEntity(
             senderId = ID_FROM + n,
             message = message,
-            latitude = 37.42200 + n * 0.00031,
-            longitude = -122.08400 - n * 0.00027,
+            latitude = if (positionUnknown) 0.0 else 37.42200 + n * 0.00031,
+            longitude = if (positionUnknown) 0.0 else -122.08400 - n * 0.00027,
             batteryPercent = if (hasFullMessage) 40 else -1,
             rssi = rssi,
             hopCount = hop,
@@ -40,8 +41,8 @@ object DemoEntries {
             updateCounter = 5,
             isRelayed = hop > 0,
             isCancelled = cancelled,
-            positionUnknown = false,
-            positionTimeSeconds = (nowEpochMillis - ageMillis) / 1000,
+            positionUnknown = positionUnknown,
+            positionTimeSeconds = if (positionUnknown) null else (nowEpochMillis - ageMillis) / 1000,
             sosStartedSeconds = (nowEpochMillis - ageMillis) / 1000 - 1800,
             sendIntervalMinutes = 5,
             lastSeenElapsedMillis = (nowElapsedMillis - ageMillis).coerceAtLeast(1L),
@@ -55,6 +56,7 @@ object DemoEntries {
             entry(4, "Under the stairs, ground floor. Phone battery low.", 3 * HOUR, rssi = -85),
             entry(5, "Got out. Safe now.", 20 * MINUTE, rssi = -70, cancelled = true),
             entry(6, "Old entry from two days ago.", 50 * HOUR, rssi = -90),
+            entry(7, "Cannot get GPS. Basement, left side of the building.", 2 * MINUTE, rssi = -60, positionUnknown = true),
         )
     }
 }

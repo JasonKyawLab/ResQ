@@ -105,14 +105,19 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
         senderId = entity.senderId,
         displayId = "#" + Integer.toHexString(entity.senderId).uppercase().takeLast(6),
         message = entity.message.ifBlank { "(location only — no message received yet)" },
-        coordinateText = String.format(Locale.US, "%.5f, %.5f", entity.latitude, entity.longitude),
+        coordinateText = if (entity.positionUnknown) {
+            "Position unknown (sender has no GPS signal)"
+        } else {
+            String.format(Locale.US, "%.5f, %.5f", entity.latitude, entity.longitude)
+        },
+        positionKnown = !entity.positionUnknown,
         signalStrength = SignalStrength.fromRssi(entity.rssi),
         heardText = EntryLifecycle.heardLine(
             ageMillis = ageMillis,
             timeOfDay = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entity.lastSeenAtEpochMillis)),
             dateAndTime = SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(entity.lastSeenAtEpochMillis)),
         ),
-        positionText = EntryLifecycle.positionLine(
+        positionText = if (entity.positionUnknown) null else EntryLifecycle.positionLine(
             EntryLifecycle.positionAgeMillis(entity.positionTimeSeconds, now),
         ),
         hopCount = entity.hopCount,

@@ -245,10 +245,17 @@ When a phone hears sender X, update number u, hop h:
       the last *new* update or the last *direct* hearing (needs one more column).
 
 ### 7. Sending
-- [ ] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Today a
+- [x] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Today a
       failed fix means nothing is broadcast, which fails exactly the person under
       rubble. The message, saved location and signal strength still help.
-- [ ] A stale last-known fix shows its real age (today it is sent as if fresh).
+- [x] A stale last-known fix shows its real age (today it is sent as if fresh).
+      Built: the fix time is sent in the record, and the Receiver shows "Position X
+      old". With no fix at all the SOS goes out once as "position unknown" (flag 16,
+      coordinates 0), not again on every retry, and is sent again if the message
+      changes. If an earlier position exists this session, that beacon keeps going.
+      Open: the first "unknown" broadcast waits for the fix attempts to time out
+      (up to about 40 s when location is on but there is no signal). Consider
+      sending it at once and upgrading when a fix arrives.
 
 ### 8. Screens and help text
 - [ ] **Preset cards** on the Send screen: 4 to 6 large cards, shown only while the

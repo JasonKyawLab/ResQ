@@ -8,6 +8,8 @@ data class SosLogItemUi(
     val displayId: String,
     val message: String,
     val coordinateText: String,
+    /** False when the sender had no GPS fix: there is nothing to show or copy. */
+    val positionKnown: Boolean,
     val signalStrength: SignalStrength,
     /** "Heard 3 h ago (20:59)": the age first, a clock time only for older entries. */
     val heardText: String,

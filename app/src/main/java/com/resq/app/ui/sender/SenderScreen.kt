@@ -252,6 +252,7 @@ private fun SenderScreen(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = when {
+                        isAcquiringFirstFix && state.positionUnknown -> "Broadcasting — no GPS signal yet"
                         isAcquiringFirstFix -> "Broadcasting — acquiring GPS…"
                         state.isBroadcasting -> "Broadcasting SOS"
                         else -> "Idle — tap to broadcast"
@@ -335,6 +336,7 @@ private fun formatFrequency(state: SenderUiState): String =
 private fun formatCoordinate(state: SenderUiState): String {
     val fix = state.lastFix
     if (fix != null) return String.format(Locale.US, "%.5f, %.5f", fix.latitude, fix.longitude)
+    if (state.isBroadcasting && state.positionUnknown) return "No GPS yet"
     return if (state.isBroadcasting) "Acquiring…" else "—"
 }
 

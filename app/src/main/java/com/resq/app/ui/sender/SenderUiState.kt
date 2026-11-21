@@ -8,6 +8,8 @@ data class SenderUiState(
     val message: String = "",
     val locationNote: String = "",
     val lastFix: GpsFix? = null,
+    /** Broadcasting, but no GPS fix yet: the SOS goes out without a position. */
+    val positionUnknown: Boolean = false,
     val lastBroadcastAtEpochMillis: Long? = null,
     val batteryPercent: Int = -1,
     val bluetoothReady: Boolean = true,

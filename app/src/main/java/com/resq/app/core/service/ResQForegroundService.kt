@@ -15,6 +15,8 @@ import com.resq.app.core.ble.SosRecord
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.data.settings.SosSession
 import com.resq.app.core.di.ServiceLocator
+import com.resq.app.core.location.GpsFix
+import com.resq.app.core.location.PositionPlan
 import com.resq.app.core.permissions.PermissionManager
 import com.resq.app.core.permissions.ReadinessRefreshTrigger
 import com.resq.app.core.util.Logger
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -37,6 +41,7 @@ private const val TAG = "ResQForegroundService"
 private const val RELAY_CYCLE_INTERVAL_MILLIS = 2 * 60_000L
 private const val STALE_PRUNE_INTERVAL_MILLIS = 10 * 60_000L
 private const val FIX_RETRY_BACKOFF_MILLIS = 30_000L
+private const val MIN_RETRY_GAP_MILLIS = 1_000L
 
 /** How long the "stopped" beacon stays on the air after Stop. Phones relay it for a while longer. */
 private const val STOP_ANNOUNCE_MILLIS = 60_000L
@@ -83,6 +88,7 @@ class ResQForegroundService : Service() {
     // burst of requests is one update.
     private val refreshSignal = Channel<Unit>(Channel.CONFLATED)
     private var lastBroadcastMessage: String? = null
+    private var lastBroadcastWasUnknown = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -150,6 +156,7 @@ class ResQForegroundService : Service() {
             updateCounter = session.counter
             sosStartedAtSeconds = session.startedAtSeconds
             lastBroadcastMessage = null
+            lastBroadcastWasUnknown = false
             refreshSignal.tryReceive() // drop a request left over from an earlier SOS
             watchMessageEdits()
             var editRefresh = false
@@ -180,9 +187,19 @@ class ResQForegroundService : Service() {
                     //    FIX_RETRY_BACKOFF_MILLIS regardless, and only fall
                     //    back to the user's actual interval once a fix has
                     //    been obtained at least once.
-                    withTimeoutOrNull(minOf(interval.millis, FIX_RETRY_BACKOFF_MILLIS)) {
-                        ReadinessRefreshTrigger.rawChanges(applicationContext, locator).first()
-                    }
+                    // A message edit also ends the wait, so a change typed while there is no GPS
+                    // signal still goes out at once.
+                    val waitStartedAt = SystemClock.elapsedRealtime()
+                    editRefresh = withTimeoutOrNull(minOf(interval.millis, FIX_RETRY_BACKOFF_MILLIS)) {
+                        merge(
+                            ReadinessRefreshTrigger.rawChanges(applicationContext, locator).map { false },
+                            refreshSignal.receiveAsFlow().map { true },
+                        ).first()
+                    } == true
+                    // A floor, whatever woke us: a retry loop must never run faster than this, or a
+                    // misbehaving signal could spin the CPU and the log until Android kills the app.
+                    val waited = SystemClock.elapsedRealtime() - waitStartedAt
+                    if (waited < MIN_RETRY_GAP_MILLIS) delay(MIN_RETRY_GAP_MILLIS - waited)
                 }
             }
         }
@@ -261,37 +278,59 @@ class ResQForegroundService : Service() {
 
     /** @return true if a fix was obtained and broadcast, false if this cycle produced nothing. */
     private suspend fun broadcastOwnFix(reuseLastFix: Boolean = false): Boolean {
-        if (!PermissionManager.hasLocationPermissions(this)) {
-            Logger.w(TAG) { "Location permission missing this cycle" }
-            return false
-        }
+        val lastFix = locator.sessionController.state.value.lastFix
         // After a message edit the update goes out at once with the last known fix (its own
-        // position time is still sent), instead of waiting seconds for a new GPS fix.
-        val fix = (if (reuseLastFix) locator.sessionController.state.value.lastFix else null)
-            ?: locator.locationProvider.requestSingleFix()
-        if (fix == null) {
-            Logger.w(TAG) { "No GPS fix available this cycle" }
-            return false
+        // position time is still sent) and never waits for a new GPS fix.
+        val fix: GpsFix? = when {
+            reuseLastFix -> lastFix
+            !PermissionManager.hasLocationPermissions(this) -> {
+                Logger.w(TAG) { "Location permission missing this cycle" }
+                null
+            }
+            else -> locator.locationProvider.requestSingleFix()
         }
-        val senderId = sessionSenderId
         val saved = locator.settingsRepository.settings.first()
         val message = SosMessage.compose(saved.locationNote, saved.sosMessageDraft)
+
+        if (fix == null) {
+            Logger.w(TAG) { "No GPS fix available this cycle" }
+            // Nothing should mean "nothing on the air": with no position at all, broadcast the message and
+            // signal anyway, marked "position unknown". If an earlier position exists, its beacon keeps
+            // going and its real age is shown, which helps a rescuer more than "unknown".
+            if (lastFix == null &&
+                PositionPlan.shouldBroadcastWithoutFix(lastBroadcastWasUnknown, lastBroadcastMessage, message)
+            ) {
+                broadcastUpdate(fix = null, message = message)
+            }
+            return false
+        }
+        broadcastUpdate(fix, message)
+        return true
+    }
+
+    /** Puts one update on the air: a newer counter, the beacon, and the full record for helpers to read. */
+    private suspend fun broadcastUpdate(fix: GpsFix?, message: String) {
+        val senderId = sessionSenderId
         lastBroadcastMessage = message
+        lastBroadcastWasUnknown = fix == null
         val batteryPercent = locator.batteryPercent()
         locator.sessionController.recordBatteryPercent(batteryPercent)
 
         val flags = (if (message.isNotBlank()) BeaconFlags.HAS_FULL_MESSAGE else 0) or
-            (if (batteryPercent in 0..15) BeaconFlags.BATTERY_CRITICAL else 0)
+            (if (batteryPercent in 0..15) BeaconFlags.BATTERY_CRITICAL else 0) or
+            (if (fix == null) BeaconFlags.POSITION_UNKNOWN else 0)
 
         val counter = updateCounter
         updateCounter = (updateCounter + 1).coerceAtMost(MAX_UPDATE_COUNTER)
         locator.settingsRepository.saveSessionCounter(updateCounter, System.currentTimeMillis() / 1000)
 
+        val latitude = fix?.latitude ?: 0.0
+        val longitude = fix?.longitude ?: 0.0
         locator.bleAdvertiser.start(
             BeaconPayload(
                 senderId = senderId,
-                latitude = fix.latitude,
-                longitude = fix.longitude,
+                latitude = latitude,
+                longitude = longitude,
                 flags = flags,
                 hopCount = 0,
                 updateCounter = counter,
@@ -300,18 +339,17 @@ class ResQForegroundService : Service() {
         locator.gattServerManager.updateRecord(
             SosRecord(
                 senderId = senderId,
-                latitude = fix.latitude,
-                longitude = fix.longitude,
+                latitude = latitude,
+                longitude = longitude,
                 message = message,
                 batteryPercent = batteryPercent,
                 hopCount = 0,
-                positionTimeSeconds = fix.capturedAtEpochMillis / 1000,
+                positionTimeSeconds = fix?.let { PositionPlan.positionTimeSeconds(it.capturedAtEpochMillis) },
                 sosStartedSeconds = sosStartedAtSeconds,
                 sendIntervalMinutes = locator.settingsRepository.effectiveSendInterval().minutes.toInt(),
             )
         )
-        locator.sessionController.recordFix(fix)
-        return true
+        if (fix != null) locator.sessionController.recordFix(fix) else locator.sessionController.recordBroadcastWithoutPosition()
     }
 
     // --- Receiving / relay ----------------------------------------------

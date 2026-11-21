@@ -237,7 +237,7 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) {
                 Text("Dismiss", color = TextSecondary, fontWeight = FontWeight.SemiBold)
             }
-            TextButton(
+            if (entry.positionKnown) TextButton(
                 onClick = {
                     clipboard.setText(AnnotatedString(entry.coordinateText))
                     // Android 13+ shows its own "copied" confirmation; older versions need one.

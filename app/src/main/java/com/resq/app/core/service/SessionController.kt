@@ -23,7 +23,12 @@ class SessionController {
     fun setReceiving(active: Boolean) = _state.update { it.copy(isReceiving = active) }
 
     fun recordFix(fix: GpsFix) = _state.update {
-        it.copy(lastFix = fix, lastBroadcastAtEpochMillis = System.currentTimeMillis())
+        it.copy(lastFix = fix, lastBroadcastAtEpochMillis = System.currentTimeMillis(), positionUnknown = false)
+    }
+
+    /** A broadcast went out with no position, because no GPS fix could be had. */
+    fun recordBroadcastWithoutPosition() = _state.update {
+        it.copy(lastBroadcastAtEpochMillis = System.currentTimeMillis(), positionUnknown = true)
     }
 
     fun recordBatteryPercent(percent: Int) = _state.update { it.copy(batteryPercent = percent) }

@@ -9,4 +9,6 @@ data class SessionState(
     val lastFix: GpsFix? = null,
     val lastBroadcastAtEpochMillis: Long? = null,
     val batteryPercent: Int = -1,
+    /** The last broadcast went out without a position (no GPS fix yet). */
+    val positionUnknown: Boolean = false,
 )

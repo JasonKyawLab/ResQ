@@ -33,6 +33,7 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
             message = settings.sosMessageDraft,
             locationNote = settings.locationNote,
             lastFix = session.lastFix,
+            positionUnknown = session.positionUnknown,
             lastBroadcastAtEpochMillis = session.lastBroadcastAtEpochMillis,
             batteryPercent = if (session.batteryPercent >= 0) session.batteryPercent else locator.batteryPercent(),
             bluetoothReady = BleCapability.readinessToAdvertise(application) == BleReadiness.Ready,

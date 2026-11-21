@@ -5,6 +5,8 @@ import com.resq.app.core.ble.BluetoothStateObserver
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.location.LocationProviderObserver
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
@@ -30,8 +32,15 @@ object ReadinessRefreshTrigger {
      * synthetic first emission and never actually wait for anything.
      */
     fun rawChanges(context: Context, locator: ServiceLocator): Flow<Unit> = merge(
-        locator.permissionRefreshTick.map { },
+        locator.permissionRefreshTick.changesOnly(),
         BluetoothStateObserver.changes(context),
         LocationProviderObserver.changes(context),
     )
 }
+
+/**
+ * Only the *next* changes of a [StateFlow]. A StateFlow hands every new collector its current value at
+ * once, so without dropping that first value a "wait for the next change" returned instantly, and the send
+ * loop spun hundreds of times a second whenever there was no GPS fix.
+ */
+internal fun StateFlow<Int>.changesOnly(): Flow<Unit> = drop(1).map { }
