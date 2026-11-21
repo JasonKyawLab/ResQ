@@ -328,10 +328,13 @@ When a phone hears sender X, update number u, hop h:
       Done for every screen, banners, dialogs, buttons, phrases, intervals and signal labels. Left in
       Kotlin on purpose: the age wording in `EntryLifecycle` ("Heard 3 h ago") because its unit tests pin it,
       and the debug-only rows. Do those when a second language is added.
-- [ ] Update the privacy policy: entries are no longer removed after about an hour,
-      and the sender ID is no longer made once on first install but anew at each
-      Start and re-upload `store/privacy/index.html` to the same
-      Cloudflare Pages project.
+- [x] Update the privacy policy (`store/privacy/index.html`, dated 21 November 2026): a new
+      sender ID at each Start (kept for 30 minutes after Stop) and recent own IDs remembered for 72
+      hours, received entries kept up to 72 hours with Dismiss and Clear all, resume of an SOS or
+      scanning for up to 12 hours, no Android backup, "position unknown" and repeated positions,
+      battery level and other details sent, relaying of other people's SOS, the battery settings
+      page. **Still to do on your side: upload it again to the same Cloudflare Pages project
+      (`resq-privacy`); the URL stays the same.**
 - [ ] Store description with a "How it works" paragraph that says the broadcast is
       not encrypted and that ResQ does not replace emergency services. No words
       like "secure" or "private".

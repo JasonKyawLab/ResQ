@@ -62,7 +62,7 @@
     </svg>
     <h1>Res<span>Q</span> Privacy Policy</h1>
   </header>
-  <p class="meta">Last updated: 14 November 2026 &middot; Developed by jasonkyawlab</p>
+  <p class="meta">Last updated: 21 November 2026 &middot; Developed by jasonkyawlab</p>
 
   <h2>Overview</h2>
   <p>ResQ is an offline emergency beacon app. It has no account, no sign-in, and no backend server of any kind. It cannot connect to the internet, because it never asks your device for that permission. Because of that, most of what a typical privacy policy covers (accounts, servers, data breaches, data sales) does not apply here: there is no server for your data to reach, and the developer never receives, stores, or has access to anything the app does on your device.</p>
@@ -71,16 +71,18 @@
   <h2>Information the App Accesses</h2>
   <p>We use &ldquo;accesses&rdquo; rather than &ldquo;collects&rdquo; deliberately: nothing described below is sent to the developer, to an analytics service, or to any server. It stays on your device, or is broadcast locally over Bluetooth to nearby phones running ResQ.</p>
   <ul>
-    <li><strong>Location (GPS coordinates).</strong> Fetched once per broadcast interval while you have Sending turned on, so your SOS carries a current position.</li>
-    <li><strong>SOS message text.</strong> Whatever you type into the message field, broadcast alongside your location.</li>
-    <li><strong>Bluetooth signals from nearby devices.</strong> While Scanning is on, ResQ listens for SOS beacons from other phones running the app, so it can display and relay them.</li>
-    <li><strong>Battery level.</strong> Read from the device to show on your own status screen and to flag a low-battery SOS to others.</li>
-    <li><strong>A randomly generated sender ID.</strong> Created once on first install and stored only on your device, so other ResQ users can tell your repeated broadcasts apart from someone else&rsquo;s. It is not linked to your name, phone number, or any other identity.</li>
+    <li><strong>Location (GPS coordinates).</strong> While you have Sending turned on, ResQ gets a fresh position at the interval you choose (every 1, 5 or 15 minutes, or hourly with Battery saver) and puts it in your SOS. If no position can be found, your SOS is sent marked &ldquo;position unknown&rdquo;, and if an earlier position exists it is repeated with the time it was taken.</li>
+    <li><strong>SOS message text and &ldquo;My location&rdquo; line.</strong> Whatever you type into the message field, plus the optional room, floor or building line you save in Settings, sent together with your location.</li>
+    <li><strong>Bluetooth signals from nearby devices.</strong> While Scanning is on, ResQ listens for SOS signals from other phones running the app, so it can show them and pass them on to others.</li>
+    <li><strong>Battery level.</strong> Read from the device to show on your own status screen, and sent in your SOS so helpers can see whether your phone is nearly flat.</li>
+    <li><strong>A randomly generated sender ID.</strong> Created each time you press Start, and kept if you press Start again within 30 minutes of stopping, so that restarting does not look like a second emergency. It lets other phones tell your repeated updates apart from someone else&rsquo;s. It is not linked to your name, phone number, or any other identity. Your phone remembers recent IDs of its own for 72 hours so that your own SOS, if passed back to you, is not shown as someone else&rsquo;s.</li>
+    <li><strong>Other details sent with your SOS.</strong> The time the SOS started, the time your position was taken, and how often you update.</li>
   </ul>
 
   <h2>How This Information Is Used</h2>
   <p>Your location and message are broadcast over Bluetooth Low Energy to any nearby phone running ResQ, so they can be seen by people physically close enough to help. Other ResQ users within range, or further away through phones that relay the signal onward, may see this information as part of using the app as intended.</p>
   <p>That broadcast is the only place this information goes. It is never transmitted to the developer, to any company, or to any server, because ResQ has none. The developer cannot see your location, your messages, or any other data from the app, because there is no mechanism by which it could.</p>
+  <p>When you press Stop, ResQ briefly broadcasts a &ldquo;marked safe&rdquo; signal, shown on other phones as unverified, so that nearby devices know you have ended the SOS. If the app is closed or the phone dies without you pressing Stop, no such signal is sent.</p>
   <p class="note"><strong>Please note:</strong> the Bluetooth broadcast is not encrypted. Anyone within Bluetooth range using ResQ, or a generic Bluetooth scanning tool, could read the location and message you are broadcasting. Only turn Sending on when you want nearby people to find you, and do not put sensitive personal information in your message.</p>
 
   <h2>Permissions Explained</h2>
@@ -89,17 +91,19 @@
       <tr><th>Permission</th><th>Why ResQ asks for it</th></tr>
     </thead>
     <tbody>
-      <tr><td>Location (fine/coarse)</td><td>To attach your GPS coordinates to your SOS broadcast, and because Android requires location permission to see Bluetooth scan results at all.</td></tr>
+      <tr><td>Location (fine/coarse)</td><td>To attach your GPS coordinates to your SOS broadcast, including while the screen is off during an active SOS, and because Android requires location permission to see Bluetooth scan results at all. ResQ does not ask for background location access: it only reads your position while you have switched Sending on.</td></tr>
       <tr><td>Bluetooth (scan, advertise, connect)</td><td>To broadcast your SOS, detect nearby SOS signals, and exchange full messages over a direct connection.</td></tr>
       <tr><td>Notifications</td><td>To show the persistent notification required while the app is actively broadcasting or scanning in the background.</td></tr>
-      <tr><td>Run in the foreground</td><td>To keep broadcasting or scanning reliably with the screen off, instead of being stopped by the system.</td></tr>
+      <tr><td>Run in the foreground (connected device, location)</td><td>To keep broadcasting or scanning reliably with the screen off, instead of being stopped by the system.</td></tr>
+      <tr><td>Battery optimisation</td><td>Not a permission. ResQ can open Android&rsquo;s battery settings page so that you can stop Android from closing it. It never changes that setting itself.</td></tr>
     </tbody>
   </table>
   <p>ResQ never requests internet access, contacts, camera, microphone, SMS, or any permission unrelated to its core function.</p>
 
   <h2>Data Storage and Retention</h2>
-  <p>Everything ResQ stores (your settings, your sender ID, and the log of SOS signals you have received from others) lives in a local database on your device only. None of it is backed up to any cloud service by the app itself.</p>
-  <p>Received SOS entries are automatically removed from that log after about an hour of no further sightings, so the list reflects who is currently nearby rather than growing forever. Uninstalling ResQ permanently erases all of this data from your device immediately. There is nothing left anywhere else to delete, because nothing was ever sent anywhere else.</p>
+  <p>Everything ResQ stores lives on your device only: your settings, your saved &ldquo;My location&rdquo; line and message draft, your recent sender IDs and the state needed to continue an SOS or a scan after the phone closes the app, and the log of SOS signals you have received from others. The app is set not to take part in Android backup, so none of it is copied to Google or any other cloud service.</p>
+  <p>Received SOS entries (message, position, signal strength and the times heard) are kept on your phone for up to 72 hours after they were last heard. Dismiss hides an entry from your list (it stays stored until it expires, and it comes back if the same sender sends a newer update). Settings &rarr; Clear all received SOS removes every saved entry at any time, although an SOS that is still being sent nearby will appear again the next time your phone hears it. An SOS that you were sending when the app was closed is resumed for up to 12 hours; a saved &ldquo;scanning is on&rdquo; is resumed for the same time. Uninstalling ResQ permanently erases all of this data from your device. There is nothing left anywhere else to delete, because nothing was ever sent anywhere else.</p>
+  <p class="note"><strong>Please note:</strong> while Scanning is on, ResQ passes on the SOS signals it hears to other nearby phones, which is how an SOS travels further than one phone&rsquo;s range. That means the location and message of another person&rsquo;s SOS that your phone has heard may be sent on from your phone, for as long as that SOS is still live.</p>
 
   <h2>Data Sharing and Third Parties</h2>
   <p>ResQ shares no data with third parties. The only sharing it does is with nearby ResQ users over Bluetooth, which is the app&rsquo;s entire purpose. There are no advertisements, no advertising SDKs, no analytics or crash-reporting services, and no Google Play Services dependency of any kind. Nothing about your use of this app is sold, rented, or shared for marketing, research, or any other purpose.</p>
