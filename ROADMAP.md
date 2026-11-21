@@ -335,7 +335,7 @@ When a phone hears sender X, update number u, hop h:
       battery level and other details sent, relaying of other people's SOS, the battery settings
       page. **Still to do on your side: upload it again to the same Cloudflare Pages project
       (`resq-privacy`); the URL stays the same.**
-- [ ] Store description with a "How it works" paragraph that says the broadcast is
+- [x] Store description (`store/listing/en-US.md`: name 24/30, short 74/80, full 3074/4000, with the "not encrypted" and "does not replace emergency services" lines near the top and no "secure" or "private") with a "How it works" paragraph that says the broadcast is
       not encrypted and that ResQ does not replace emergency services. No words
       like "secure" or "private".
 
@@ -411,7 +411,7 @@ The decision rules become plain Kotlin so these run on a Mac:
       Losing them means no updates to the listing, ever.
 - [ ] 512x512 icon and 1024x500 feature graphic.
 - [ ] At least 2 phone screenshots with no real coordinates (blur them).
-- [ ] Short (80 characters) and full descriptions, including that ResQ is not a
+- [x] Short (80 characters) and full descriptions (written, see `store/listing/en-US.md`), including that ResQ is not a
       replacement for emergency services.
 - [ ] App content forms: privacy policy URL, ads (none), target audience (18+),
       content rating, data safety (precise location and messages shared with
