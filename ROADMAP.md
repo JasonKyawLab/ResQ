@@ -407,6 +407,11 @@ The decision rules become plain Kotlin so these run on a Mac:
 - [ ] Release APK contains no demo helper.
 
 ### Play Console and release hygiene
+- [x] Package name: Play Console says `com.resq.app` is already taken by another app, so the public
+      identity is now `com.jasonkyawlab.resq` (debug build `com.jasonkyawlab.resq.debug`). Only the
+      `applicationId` changed; the code keeps its `com.resq.app` packages and namespace. **It can never
+      be changed once a build is uploaded to Play.** For adb use the new id, and uninstall the old
+      `com.resq.app.debug` from test phones: it is a separate app now.
 - [ ] Back up `~/.resq-signing/resq-upload.jks` and its passwords somewhere safe.
       Losing them means no updates to the listing, ever.
 - [ ] 512x512 icon and 1024x500 feature graphic.

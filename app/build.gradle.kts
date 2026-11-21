@@ -26,7 +26,9 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.resq.app"
+        // Not the same as the namespace on purpose: Google Play says com.resq.app is already taken by another
+        // app. The source code keeps its com.resq.app packages; only this public identity changed.
+        applicationId = "com.jasonkyawlab.resq"
         minSdk = 23
         targetSdk = 36
         versionCode = 1
