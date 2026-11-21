@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.resq.app.ui.theme.TextPrimary
 
@@ -23,6 +24,14 @@ val ScreenVerticalPadding = 16.dp
 @Composable
 fun ScreenHeader(
     title: String,
+    modifier: Modifier = Modifier,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) = ScreenHeader(AnnotatedString(title), modifier, leading, trailing)
+
+@Composable
+fun ScreenHeader(
+    title: AnnotatedString,
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,

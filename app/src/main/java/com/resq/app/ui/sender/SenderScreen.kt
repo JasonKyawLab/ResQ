@@ -1,5 +1,8 @@
 package com.resq.app.ui.sender
 
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import com.resq.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
@@ -149,7 +152,15 @@ private fun SenderScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            ScreenHeader(title = stringResource(R.string.app_name), leading = { AppMark() })
+            // The wordmark as on the store page and the privacy page: "Res" in white, the Q in red.
+            val appName = stringResource(R.string.app_name)
+            ScreenHeader(
+                title = buildAnnotatedString {
+                    append(appName.dropLast(1))
+                    withStyle(SpanStyle(color = SignalRed)) { append(appName.takeLast(1)) }
+                },
+                leading = { AppMark() },
+            )
 
             when {
                 !state.permissionsGranted -> ActionBanner(
