@@ -89,6 +89,18 @@ class LocationProvider(private val context: Context) {
                     locationManager.removeUpdates(this)
                     if (continuation.isActive) continuation.resume(location)
                 }
+
+                // Before Android 11 these three are abstract, not optional: leaving them out crashes the app
+                // (AbstractMethodError) the moment Location is switched off during a request.
+                override fun onProviderDisabled(provider: String) {
+                    locationManager.removeUpdates(this)
+                    if (continuation.isActive) continuation.resume(null)
+                }
+
+                override fun onProviderEnabled(provider: String) = Unit
+
+                @Deprecated("Never called on Android 10 and later; required by Android 9 and earlier.")
+                override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
             }
             locationManager.requestSingleUpdate(provider, listener, context.mainLooper)
             continuation.invokeOnCancellation { locationManager.removeUpdates(listener) }
