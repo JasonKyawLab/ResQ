@@ -38,6 +38,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         "Saved",
                         if (settings.sessionUpdatedSeconds == 0L) "never" else "${(now - settings.sessionUpdatedSeconds) / 60} min ago",
                     ),
+                    DebugRow(
+                        "Scanning saved",
+                        if (!settings.scanActive) "no" else "yes, ${(now - settings.scanUpdatedSeconds) / 60} min ago",
+                    ),
                     DebugRow("Send interval", (if (settings.batterySaverEnabled) BroadcastInterval.BATTERY_SAVER else settings.sendInterval).label),
                 )
             },
@@ -60,6 +64,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun onLocationNoteChanged(note: String) {
         viewModelScope.launch { locator.settingsRepository.setLocationNote(note) }
+    }
+
+    fun onClearReceived() {
+        viewModelScope.launch { locator.sosLogRepository.clearAll() }
     }
 
     fun onBatterySaverToggled(enabled: Boolean) {

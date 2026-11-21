@@ -48,12 +48,15 @@ class SenderViewModel(application: Application) : AndroidViewModel(application) 
         // A recent SOS that was never stopped (for example Android refused to restart the
         // app after repeated crashes) comes back when the app is opened.
         viewModelScope.launch {
-            if (locator.sessionController.state.value.isSending) return@launch
             val context = getApplication<Application>()
             if (BleCapability.readinessToAdvertise(context) != BleReadiness.Ready) return@launch
             if (!PermissionManager.hasEverythingRequired(context)) return@launch
-            val saved = locator.settingsRepository.activeSession(System.currentTimeMillis() / 1000)
-            if (saved != null) ResQForegroundService.resumeSending(context)
+            val now = System.currentTimeMillis() / 1000
+            val savedSos = !locator.sessionController.state.value.isSending &&
+                locator.settingsRepository.activeSession(now) != null
+            val savedScan = !locator.sessionController.state.value.isReceiving &&
+                locator.settingsRepository.scanningToResume(now)
+            if (savedSos || savedScan) ResQForegroundService.resumeSaved(context)
         }
     }
 

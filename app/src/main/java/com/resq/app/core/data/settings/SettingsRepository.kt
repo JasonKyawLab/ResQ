@@ -26,6 +26,9 @@ data class ResQSettings(
     val sessionActive: Boolean = false,
     val sessionCounter: Int = 0,
     val sessionUpdatedSeconds: Long = 0L,
+    /** Saved "scanning is on" state, so it can come back after Android kills the app. */
+    val scanActive: Boolean = false,
+    val scanUpdatedSeconds: Long = 0L,
 )
 
 /**
@@ -46,6 +49,8 @@ class SettingsRepository(private val context: Context) {
         val SESSION_COUNTER = intPreferencesKey("session_counter")
         val SESSION_UPDATED = longPreferencesKey("session_updated_seconds")
         val SESSION_ACTIVE = booleanPreferencesKey("session_active")
+        val SCAN_ACTIVE = booleanPreferencesKey("scan_active")
+        val SCAN_UPDATED = longPreferencesKey("scan_updated_seconds")
         val RECENT_OWN_IDS = stringPreferencesKey("recent_own_ids")
     }
 
@@ -61,6 +66,8 @@ class SettingsRepository(private val context: Context) {
             sessionActive = prefs[Keys.SESSION_ACTIVE] ?: false,
             sessionCounter = prefs[Keys.SESSION_COUNTER] ?: 0,
             sessionUpdatedSeconds = prefs[Keys.SESSION_UPDATED] ?: 0L,
+            scanActive = prefs[Keys.SCAN_ACTIVE] ?: false,
+            scanUpdatedSeconds = prefs[Keys.SCAN_UPDATED] ?: 0L,
         )
     }
 
@@ -124,6 +131,31 @@ class SettingsRepository(private val context: Context) {
             // Cleaning up an expired session passes null and leaves the time alone.
             if (stoppedAtSeconds != null) it[Keys.SESSION_UPDATED] = stoppedAtSeconds
         }
+    }
+
+    /** Scanning was switched on (or is still running): remember it, and when it was last known alive. */
+    suspend fun markScanning(nowSeconds: Long) {
+        context.dataStore.edit {
+            it[Keys.SCAN_ACTIVE] = true
+            it[Keys.SCAN_UPDATED] = nowSeconds
+        }
+    }
+
+    /** The user switched scanning off: nothing to resume. */
+    suspend fun clearScanning() {
+        context.dataStore.edit { it[Keys.SCAN_ACTIVE] = false }
+    }
+
+    /**
+     * True if scanning was on and the app was last known running within [RESUME_WINDOW_SECONDS]. An old
+     * forgotten flag is cleared, so a phone is never put back to scanning by surprise days later.
+     */
+    suspend fun scanningToResume(nowSeconds: Long): Boolean {
+        val prefs = context.dataStore.data.first()
+        val active = prefs[Keys.SCAN_ACTIVE] == true
+        if (SessionResume.isResumable(active, prefs[Keys.SCAN_UPDATED] ?: 0L, nowSeconds)) return true
+        if (active) clearScanning()
+        return false
     }
 
     /** True for the running SOS's ID and any of our IDs from the last 72 hours. */

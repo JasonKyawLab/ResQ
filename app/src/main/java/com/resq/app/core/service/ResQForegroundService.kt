@@ -9,6 +9,8 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.resq.app.core.ble.BeaconFlags
 import com.resq.app.core.ble.BeaconPayload
+import com.resq.app.core.ble.BleCapability
+import com.resq.app.core.ble.BleReadiness
 import com.resq.app.core.ble.MAX_HOP_COUNT
 import com.resq.app.core.ble.MAX_UPDATE_COUNTER
 import com.resq.app.core.ble.SosRecord
@@ -93,19 +95,22 @@ class ResQForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null || intent.action == ACTION_RESUME_SENDING) {
+        if (intent == null || intent.action == ACTION_RESUME) {
             // Either Android restarted us after killing the app (START_STICKY, no action)
-            // or the app was opened while a recent SOS was never stopped. Carry it on with
-            // the same ID, counter and Start time instead of silently leaving it ended.
+            // or the app was opened while something was never stopped. Carry on with what was running:
+            // an SOS keeps its ID, counter and Start time; scanning simply starts again.
             ensureForeground()
             scope.launch {
-                val saved = locator.settingsRepository.activeSession(System.currentTimeMillis() / 1000)
-                if (saved != null) {
-                    startSending(resume = saved)
-                    updateNotification()
-                } else {
-                    stopIfIdle()
+                val nowSeconds = System.currentTimeMillis() / 1000
+                val savedSos = locator.settingsRepository.activeSession(nowSeconds)
+                if (savedSos != null) startSending(resume = savedSos)
+                if (locator.settingsRepository.scanningToResume(nowSeconds) &&
+                    BleCapability.readinessToScan(applicationContext) == BleReadiness.Ready
+                ) {
+                    startReceiving()
                 }
+                updateNotification()
+                stopIfIdle()
             }
             return START_STICKY
         }
@@ -365,6 +370,7 @@ class ResQForegroundService : Service() {
         if (scanJob?.isActive == true) return
         ensureForeground()
         locator.sessionController.setReceiving(true)
+        scope.launch { locator.settingsRepository.markScanning(System.currentTimeMillis() / 1000) }
         startGattServer()
         locator.bleScanner.start()
 
@@ -393,11 +399,15 @@ class ResQForegroundService : Service() {
             while (true) {
                 delay(STALE_PRUNE_INTERVAL_MILLIS)
                 locator.sosLogRepository.pruneStaleEntries()
+                // Still alive: keeps the saved "scanning is on" fresh for the resume window.
+                locator.settingsRepository.markScanning(System.currentTimeMillis() / 1000)
             }
         }
     }
 
     private fun stopReceiving() {
+        // Only a real switch-off clears it. A kill never gets here, so scanning can resume.
+        scope.launch { locator.settingsRepository.clearScanning() }
         scanJob?.cancel()
         relayJob?.cancel()
         pruneJob?.cancel()
@@ -481,7 +491,7 @@ class ResQForegroundService : Service() {
         const val ACTION_STOP_SENDING = "com.resq.app.action.STOP_SENDING"
         const val ACTION_START_RECEIVING = "com.resq.app.action.START_RECEIVING"
         const val ACTION_STOP_RECEIVING = "com.resq.app.action.STOP_RECEIVING"
-        const val ACTION_RESUME_SENDING = "com.resq.app.action.RESUME_SENDING"
+        const val ACTION_RESUME = "com.resq.app.action.RESUME"
         const val ACTION_STOP_ALL = "com.resq.app.action.STOP_ALL"
 
         private fun start(context: Context, action: String) {
@@ -490,7 +500,8 @@ class ResQForegroundService : Service() {
         }
 
         fun startSending(context: Context) = start(context, ACTION_START_SENDING)
-        fun resumeSending(context: Context) = start(context, ACTION_RESUME_SENDING)
+        /** Brings back whatever was running (an SOS, scanning, or both) if it was never stopped. */
+        fun resumeSaved(context: Context) = start(context, ACTION_RESUME)
         fun stopSending(context: Context) = start(context, ACTION_STOP_SENDING)
         fun startReceiving(context: Context) = start(context, ACTION_START_RECEIVING)
         fun stopReceiving(context: Context) = start(context, ACTION_STOP_RECEIVING)

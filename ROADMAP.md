@@ -180,7 +180,12 @@ pass, before the build is signed and uploaded.
       in the code:** when Android kills the process and restarts the service, it
       came back with no instruction, saw nothing running, and stopped itself, so
       the SOS silently ended. Fixed and checked on the Samsung.
-- [ ] Also save "scanning is on" and resume it the same way.
+- [x] Also save "scanning is on" and resume it the same way. Built: switching Scan on
+      saves it (refreshed every 10 min while alive); only switching it off clears it,
+      a kill does not. After a kill or when the app is opened it resumes if the last
+      sign of life was under 12 hours ago and Bluetooth is ready; an older flag is
+      cleared. One resume action (`ACTION_RESUME`) brings back an SOS, scanning or both.
+      Debug line in Settings: "Scanning saved". Still to test on the phone.
 - [x] Make sure the restarted service shows its notification straight away.
 - [ ] Battery optimisation row in Settings, like the permission rows: shows
       whether ResQ is exempt, opens the system battery page (no special
@@ -214,7 +219,12 @@ When a phone hears sender X, update number u, hop h:
 - [x] Compare update numbers with wraparound.
 - [x] Keep the lowest hop count ever heard. Hop is only a safety fuse (cap 6); it
       stops ping-pong inflation between nearby relays.
-- [ ] Show **Nearby** (heard directly) or **Relayed** instead of a hop count.
+- [x] Decided: keep the hop count ("relayed ×N") instead of Nearby / Relayed words, so
+      a rescuer can work out distance. The hop number is explained in "How ResQ works"
+      (see section 8): 0 = heard straight from the sender's phone, so they are within
+      Bluetooth range (tens of metres); each extra hop is one more phone that passed it
+      on, so the sender may be further away, and a higher number means an older, more
+      indirect copy. Use the coordinates and "Position X old" for where they are.
 
 ### 5. Time
 - [x] Position time and SOS started use the phone's system clock (UTC seconds),
@@ -268,10 +278,10 @@ When a phone hears sender X, update number u, hop h:
       cards, Start button, amber line, status line, status card. The Start button sits
       low on purpose; revisit if it is hard to reach in the phone test.
       Still to test on the phone.
-- [ ] Send screen: "Another phone has passed on your SOS" when an echo of the
-      current (or a recent own) session ID arrives with the relayed flag. The phone
-      scans at low power while sending to hear it.
-- [ ] Settings: "Clear all received SOS" with a confirmation dialog.
+- [ ] ~~Send screen echo line~~ moved to v1.1.0 (see there): not needed to send or
+      receive, and it adds scanning while sending that is not battery-tested.
+- [x] Settings: "Clear all received SOS" with a confirmation dialog. Built as a "Received SOS"
+      section with a red-outlined button; the dialog says it cannot be undone.
 - [x] Receiver cards: "Position X min old" and "Heard X min ago", in minutes, with
       a clock time or date once older than a day. Built as "Heard 3 h ago (20:59)"
       and "Heard 2 days ago (Nov 19, 21:59)"; the stage and the text use the same age.
@@ -281,7 +291,7 @@ When a phone hears sender X, update number u, hop h:
       anyone nearby with ResQ), that it is not encrypted, that it only works if
       another phone is in range, that it does not contact emergency services, and
       three short steps. Button: "I understand".
-- [ ] **Settings, "How ResQ works"**: the full guide, reopening the first-launch
+- [ ] **Settings, "How ResQ works"** (must explain the hop count, see section 4): the full guide, reopening the first-launch
       text. Sections: if you need help, if you want to help, and "get ready before
       an emergency" (set "My location", turn off battery optimisation, allow
       permissions).
@@ -358,11 +368,11 @@ The decision rules become plain Kotlin so these run on a Mac:
 - [ ] Battery row opens the system battery page on a Samsung and one other brand.
 - [ ] Start, Stop, Start again: the second SOS has a different ID. Another phone
       shows the first as cancelled (unverified) and the second as new.
-- [ ] Echo: with a helper phone scanning, the sender shows "Another phone has
-      passed on your SOS".
 - [ ] Preset cards: appear only after Start with an empty message; one tap fills it
       and the update reaches another phone.
 - [ ] First-launch screen appears once; "How ResQ works" reopens it.
+- [ ] Scanning resume: Scan on, crash the app (`am crash`), it keeps scanning; Scan off,
+      crash it, it stays off.
 - [ ] Release APK (minified) smoke test on at least two phone brands.
 - [ ] Android 6 (API 23), a mid version, and the newest version.
 - [ ] Large system font and a small screen: no clipped text.
@@ -392,6 +402,13 @@ The decision rules become plain Kotlin so these run on a Mac:
 
 Small additions that do not change the Bluetooth format (they use the extras
 and reserved flag bits set up in v1.0.0).
+
+- [ ] Send screen: "Another phone has passed on your SOS (last at 14:05)" when a
+      beacon with the current session ID and the relayed flag is heard. Needs low-power
+      scanning while sending (extra battery, measure it first) and two phones to test.
+      A finished version is saved in git stash "echo line (moved to v1.1)"; it adds
+      `EchoRule` (4 tests), echo fields in the session state, a send-job listener and
+      the green line. Test: phone A sends, phone B scans and relays, A shows the line.
 
 - [ ] Resume broadcasting after the phone reboots (`BOOT_COMPLETED` receiver, on
       top of the saved SOS state from v1.0.0). Limits: it only runs once the phone

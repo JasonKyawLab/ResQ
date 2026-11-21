@@ -54,6 +54,9 @@ class SosLogRepository(
 
     suspend fun dismiss(senderId: Int) = dao.dismiss(senderId)
 
+    /** Removes every received SOS from this phone. One still being sent nearby shows up again when heard. */
+    suspend fun clearAll() = dao.clearAll()
+
     /**
      * Applies the once-only rules (see [UpdateRules]) and returns what happened, so the
      * caller only connects for the full record when [UpdateVerdict.SAVE_AND_FETCH] says so.

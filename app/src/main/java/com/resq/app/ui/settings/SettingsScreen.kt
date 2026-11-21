@@ -16,7 +16,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -73,6 +80,7 @@ fun SettingsRoute(
         onLocationNoteChanged = viewModel::onLocationNoteChanged,
         onIntervalSelected = viewModel::onIntervalSelected,
         onBatterySaverToggled = viewModel::onBatterySaverToggled,
+        onClearReceived = viewModel::onClearReceived,
         onRequestBluetoothEnable = onRequestBluetoothEnable,
         onRequestRuntimePermissions = onRequestRuntimePermissions,
         onOpenAppSettings = onOpenAppSettings,
@@ -87,6 +95,7 @@ private fun SettingsScreen(
     onLocationNoteChanged: (String) -> Unit,
     onIntervalSelected: (BroadcastInterval) -> Unit,
     onBatterySaverToggled: (Boolean) -> Unit,
+    onClearReceived: () -> Unit,
     onRequestBluetoothEnable: () -> Unit,
     onRequestRuntimePermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
@@ -254,6 +263,36 @@ private fun SettingsScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
                 modifier = Modifier.clickable(onClick = onOpenAppSettings),
+            )
+        }
+
+        var confirmClear by remember { mutableStateOf(false) }
+        SettingsSection(title = "Received SOS") {
+            Text(
+                "Removes every SOS this phone has heard, including marked-safe ones. Anything still " +
+                    "being sent nearby will show up again when it is heard.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = { confirmClear = true },
+                border = BorderStroke(1.5.dp, SignalRed),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = SignalRed),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Clear all received SOS") }
+        }
+        if (confirmClear) {
+            AlertDialog(
+                onDismissRequest = { confirmClear = false },
+                title = { Text("Clear all received SOS?") },
+                text = { Text("Every received SOS is removed from this phone. This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = { confirmClear = false; onClearReceived() }) {
+                        Text("Clear all", color = SignalRed)
+                    }
+                },
+                dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
             )
         }
 
