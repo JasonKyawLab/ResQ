@@ -161,6 +161,13 @@ class ResQForegroundService : Service() {
             watchMessageEdits()
             var editRefresh = false
             var nextFixAt = 0L // elapsedRealtime when the next real GPS fix is due
+            // Instant first broadcast: with no position known yet, helpers hear the SOS and its message
+            // at once as "position unknown". The first real fix follows as the next update, so waiting
+            // for GPS (up to ~40 s) never delays the first sign of the SOS.
+            if (locator.sessionController.state.value.lastFix == null) {
+                val saved = locator.settingsRepository.settings.first()
+                broadcastUpdate(fix = null, message = SosMessage.compose(saved.locationNote, saved.sosMessageDraft))
+            }
             while (true) {
                 val fixObtained = broadcastOwnFix(reuseLastFix = editRefresh)
                 val interval = locator.settingsRepository.effectiveSendInterval()

@@ -253,9 +253,10 @@ When a phone hears sender X, update number u, hop h:
       old". With no fix at all the SOS goes out once as "position unknown" (flag 16,
       coordinates 0), not again on every retry, and is sent again if the message
       changes. If an earlier position exists this session, that beacon keeps going.
-      Open: the first "unknown" broadcast waits for the fix attempts to time out
-      (up to about 40 s when location is on but there is no signal). Consider
-      sending it at once and upgrading when a fix arrives.
+      Instant first broadcast: with no position known yet, Start sends "position
+      unknown" at once and the first real fix follows as the next update, so waiting
+      for GPS (up to about 40 s) never delays the first sign of the SOS. Skipped if
+      this app run already holds a fix from an earlier SOS.
 
 ### 8. Screens and help text
 - [ ] **Preset cards** on the Send screen: 4 to 6 large cards, shown only while the

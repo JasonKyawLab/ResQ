@@ -51,6 +51,7 @@ import com.resq.app.ui.components.AppMark
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.rememberDraftField
 import com.resq.app.ui.components.StatusCard
+import com.resq.app.ui.components.TipCard
 import com.resq.app.ui.components.StatusRow
 import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
@@ -176,15 +177,7 @@ private fun SenderScreen(
             }
 
             if (state.locationUnreliable) {
-                StatusCard(
-                    rows = listOf(
-                        StatusRow(
-                            "Location tip",
-                            "GPS isn't available right now — describe where you are in the message below.",
-                            BeaconAmber,
-                        )
-                    )
-                )
+                TipCard("Location tip", "GPS isn't available right now — describe where you are in the message below.", BeaconAmber)
             }
 
             Column(

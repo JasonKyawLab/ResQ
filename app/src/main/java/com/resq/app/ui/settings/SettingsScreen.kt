@@ -43,6 +43,7 @@ import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.permissions.PermissionStatus
 import com.resq.app.ui.components.StatusCard
+import com.resq.app.ui.components.TipCard
 import com.resq.app.ui.components.StatusRow
 import com.resq.app.ui.components.rememberDraftField
 import com.resq.app.ui.components.DebugPanel
@@ -105,15 +106,7 @@ private fun SettingsScreen(
         Text("Settings", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
 
         if (state.locationUnreliable) {
-            StatusCard(
-                rows = listOf(
-                    StatusRow(
-                        "Location tip",
-                        "GPS isn't available right now — you can still describe where you are in the SOS message text.",
-                        BeaconAmber,
-                    )
-                )
-            )
+            TipCard("Location tip", "GPS isn't available right now — you can still describe where you are in the SOS message text.", BeaconAmber)
         }
 
         SettingsSection(title = "My location") {

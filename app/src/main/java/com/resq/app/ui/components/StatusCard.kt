@@ -45,3 +45,18 @@ fun StatusCard(rows: List<StatusRow>, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** A short tip: small label on top, the sentence below it at full width (a long sentence does not fit a label/value row). */
+@Composable
+fun TipCard(label: String, text: String, textColor: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(SurfaceCard, RoundedCornerShape(16.dp))
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(label, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text(text, color = textColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+    }
+}
