@@ -21,4 +21,3 @@ val BeaconAmber = Color(0xFFFFB800)
 
 val TextPrimary = Color(0xFFF5F5F5)
 val TextSecondary = Color(0xFF9A9A9A)
-val TextDisabled = Color(0xFF4D4D4D)

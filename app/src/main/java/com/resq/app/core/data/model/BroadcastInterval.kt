@@ -21,9 +21,15 @@ enum class BroadcastInterval(val minutes: Long, @StringRes val labelRes: Int) {
 
     companion object {
         val DEFAULT = EVERY_5_MIN
+
+        /** What battery saver forces. Not offered as a choice of its own: switching battery saver on is how to get it. */
         val BATTERY_SAVER = HOURLY
 
+        /** The intervals the user can pick in Settings. */
+        val SELECTABLE = listOf(EVERY_1_MIN, EVERY_5_MIN, EVERY_15_MIN)
+
+        /** A saved choice that is no longer offered (such as an older "Hourly") falls back to the default. */
         fun fromMinutes(minutes: Long): BroadcastInterval =
-            entries.firstOrNull { it.minutes == minutes } ?: DEFAULT
+            SELECTABLE.firstOrNull { it.minutes == minutes } ?: DEFAULT
     }
 }

@@ -1,5 +1,8 @@
 package com.resq.app.ui.settings
 
+import com.resq.app.ui.theme.Divider
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.PaddingValues
 import com.resq.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
@@ -70,6 +73,7 @@ fun SettingsRoute(
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenBatterySettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -89,6 +93,7 @@ fun SettingsRoute(
         onOpenAppSettings = onOpenAppSettings,
         onOpenLocationSettings = onOpenLocationSettings,
         onOpenGuide = onOpenGuide,
+        onOpenBatterySettings = onOpenBatterySettings,
         modifier = modifier,
     )
 }
@@ -105,6 +110,7 @@ private fun SettingsScreen(
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenBatterySettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locationNote = rememberDraftField(state.locationNote)
@@ -197,7 +203,7 @@ private fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.alpha(if (state.batterySaverEnabled) 0.35f else 1f),
             ) {
-                BroadcastInterval.entries.forEach { interval ->
+                BroadcastInterval.SELECTABLE.forEach { interval ->
                     IntervalRow(
                         interval = interval,
                         selected = state.sendInterval == interval && !state.batterySaverEnabled,
@@ -260,13 +266,37 @@ private fun SettingsScreen(
                 LegendDot(SignalRed, stringResource(R.string.perm_not_set))
                 LegendDot(BeaconAmber, stringResource(R.string.perm_unavailable))
             }
-            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = Divider, modifier = Modifier.padding(top = 4.dp, bottom = 10.dp))
             Text(
                 stringResource(R.string.perm_manage_system),
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary,
+            )
+            TextButton(onClick = onOpenAppSettings, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                Text(stringResource(R.string.perm_open_system), color = SignalRed, fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        SettingsSection(title = stringResource(R.string.settings_battery_optimisation)) {
+            Text(
+                stringResource(R.string.battery_help_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
-                modifier = Modifier.clickable(onClick = onOpenAppSettings),
             )
+            if (state.batteryOptimisationStatus == PermissionStatus.GRANTED) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "✓ " + stringResource(R.string.battery_exempt),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = BeaconGreen,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onOpenBatterySettings,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.battery_open)) }
         }
 
         SettingsSection(title = stringResource(R.string.settings_guide_title)) {

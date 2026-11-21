@@ -1,5 +1,20 @@
 package com.resq.app.ui.guide
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,8 +62,8 @@ fun GuideScreen(firstLaunch: Boolean, onDone: () -> Unit, modifier: Modifier = M
                 style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary,
             )
-            GuideCard(R.string.guide_intro_sends_title, listOf(R.string.guide_intro_sends))
-            GuideCard(R.string.guide_intro_range_title, listOf(R.string.guide_intro_range))
+            GuideCard(R.string.guide_intro_sends_title, listOf(R.string.guide_intro_sends), startOpen = firstLaunch)
+            GuideCard(R.string.guide_intro_range_title, listOf(R.string.guide_intro_range), startOpen = firstLaunch)
             GuideCard(
                 R.string.guide_steps_title,
                 listOf(R.string.guide_step_1, R.string.guide_step_2, R.string.guide_step_3),
@@ -57,6 +72,16 @@ fun GuideScreen(firstLaunch: Boolean, onDone: () -> Unit, modifier: Modifier = M
             GuideCard(
                 R.string.guide_help_title,
                 listOf(R.string.guide_help_1, R.string.guide_help_2, R.string.guide_help_3, R.string.guide_help_4),
+            )
+            GuideCard(
+                R.string.guide_updates_title,
+                listOf(
+                    R.string.guide_updates_1,
+                    R.string.guide_updates_2,
+                    R.string.guide_updates_3,
+                    R.string.guide_updates_4,
+                    R.string.guide_updates_5,
+                ),
             )
             GuideCard(
                 R.string.guide_helper_title,
@@ -83,28 +108,54 @@ fun GuideScreen(firstLaunch: Boolean, onDone: () -> Unit, modifier: Modifier = M
     }
 }
 
+/**
+ * A section that shows only its title until tapped, so the whole guide fits on one screen and a section
+ * can be found at a glance. On first launch the two safety sections start open, so what ResQ sends and
+ * what it cannot do are always read before the button.
+ */
 @Composable
-private fun GuideCard(@StringRes title: Int, lines: List<Int>, numbered: Boolean = false) {
+private fun GuideCard(
+    @StringRes title: Int,
+    lines: List<Int>,
+    numbered: Boolean = false,
+    startOpen: Boolean = false,
+) {
+    var open by rememberSaveable(title) { mutableStateOf(startOpen) }
+    val turn by animateFloatAsState(if (open) 180f else 0f, label = "guide-chevron")
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(SurfaceCard, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(role = Role.Button) { open = !open }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Text(
-            stringResource(title),
-            style = MaterialTheme.typography.titleMedium,
-            color = TextPrimary,
-            fontWeight = FontWeight.SemiBold,
-        )
-        lines.forEachIndexed { index, line ->
-            val text = stringResource(line)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(
-                if (numbered) "${index + 1}. $text" else text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
+                stringResource(title),
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
             )
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.rotate(turn),
+            )
+        }
+        AnimatedVisibility(visible = open) {
+            Column(modifier = Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                lines.forEachIndexed { index, line ->
+                    val text = stringResource(line)
+                    Text(
+                        if (numbered) "${index + 1}. $text" else text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                    )
+                }
+            }
         }
     }
 }

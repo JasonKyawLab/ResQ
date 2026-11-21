@@ -11,9 +11,6 @@ interface SosLogDao {
     @Upsert
     suspend fun upsert(entity: SosLogEntity)
 
-    @Query("SELECT * FROM sos_log ORDER BY lastSeenAtEpochMillis DESC")
-    fun observeAll(): Flow<List<SosLogEntity>>
-
     /** What the Scan screen shows: everything the user has not dismissed. */
     @Query("SELECT * FROM sos_log WHERE dismissed = 0 ORDER BY lastSeenAtEpochMillis DESC")
     fun observeVisible(): Flow<List<SosLogEntity>>

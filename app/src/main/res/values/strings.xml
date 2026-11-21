@@ -46,7 +46,7 @@
     <string name="send_row_status_broadcasting">Broadcasting</string>
     <string name="send_row_status_idle">Idle</string>
     <string name="send_row_frequency">Frequency</string>
-    <string name="send_row_last_coordinate">Last coordinate</string>
+    <string name="send_row_last_coordinate">Last position</string>
     <string name="send_row_last_sent">Last sent</string>
     <string name="send_row_battery">Battery</string>
     <string name="send_frequency_battery_saver">%1$s (battery saver)</string>
@@ -66,12 +66,12 @@
     <string name="scan_title">Nearby SOS</string>
     <string name="scan_start">Start scan</string>
     <string name="scan_stop">Stop scan</string>
-    <string name="scan_status_on">Scanning • relaying what we hear</string>
+    <string name="scan_status_on">Scanning • passing on what it hears</string>
     <string name="scan_status_off">Scan is off</string>
     <string name="scan_banner_permissions">Bluetooth &amp; location permissions are needed to scan.</string>
     <string name="scan_banner_bluetooth_off">Bluetooth is off — turn it on to scan.</string>
     <string name="scan_empty_listening">Nothing nearby yet. ResQ listens for SOS from nearby phones and passes them on.</string>
-    <string name="scan_empty_off">Scan is off. Press Start scan to listen for SOS from nearby phones.</string>
+    <string name="scan_empty_off">Press Start scan to listen for SOS from nearby phones.</string>
     <string name="scan_relayed">relayed ×%1$d</string>
     <string name="scan_dismiss">Dismiss</string>
     <string name="scan_copy">Copy</string>
@@ -80,7 +80,7 @@
     <string name="scan_stage_signal_lost">Signal lost · last known position, %1$s old</string>
     <string name="scan_stage_marked_safe">Marked safe by sender (unverified)</string>
     <string name="scan_stage_archived">Archived · last heard %1$s ago</string>
-    <string name="scan_no_message">(location only — no message received yet)</string>
+    <string name="scan_no_message">(no message received yet)</string>
     <string name="scan_position_unknown">Position unknown (sender has no GPS signal)</string>
 
     <!-- Settings screen -->
@@ -92,10 +92,10 @@
     <string name="settings_my_location_label">Room / floor / building</string>
     <string name="settings_my_location_placeholder">e.g. Room 305, 3rd floor, Sunrise Hotel</string>
     <string name="settings_battery_saver">Battery saver</string>
-    <string name="settings_battery_saver_title">Minimal UI, longest interval</string>
-    <string name="settings_battery_saver_help">Forces hourly broadcasts regardless of the setting below.</string>
+    <string name="settings_battery_saver_title">Longest battery life</string>
+    <string name="settings_battery_saver_help">Updates your position once an hour. It can be up to an hour old.</string>
     <string name="settings_frequency">Send frequency</string>
-    <string name="settings_frequency_help">How often a fresh GPS fix is fetched and re-broadcast. Longer intervals save battery.</string>
+    <string name="settings_frequency_help">How often your position is refreshed. Longer saves battery.</string>
     <string name="settings_frequency_locked">Locked while battery saver is on — turn it off to pick an interval.</string>
     <string name="settings_permissions">Permissions</string>
     <string name="perm_bluetooth_adapter">Bluetooth adapter</string>
@@ -108,7 +108,8 @@
     <string name="perm_set">Set</string>
     <string name="perm_not_set">Not set</string>
     <string name="perm_unavailable">Unavailable</string>
-    <string name="perm_manage_system">Manage everything from the system settings page if a toggle doesn\'t respond.</string>
+    <string name="perm_manage_system">If a toggle doesn\'t respond, manage everything on the system settings page.</string>
+    <string name="perm_open_system">Open system settings</string>
     <string name="settings_received">Received SOS</string>
     <string name="settings_received_help">Removes every SOS this phone has heard, including marked-safe ones. Anything still being sent nearby will show up again when it is heard.</string>
     <string name="settings_clear_button">Clear all received SOS</string>
@@ -138,18 +139,30 @@
     <string name="guide_help_1">Press Start. Your SOS goes out at once, even before GPS has a position. A fresh position follows as soon as there is one.</string>
     <string name="guide_help_2">Tap one of the cards that appear, or type a short message. The change reaches others after a moment.</string>
     <string name="guide_help_3">Press Stop only when you are safe. Nearby phones are told you stopped, and show it as unverified.</string>
-    <string name="guide_help_4">If the app is closed by the phone, ResQ brings an SOS from the last 12 hours back when it restarts or when you open it.</string>
+    <string name="guide_help_4">If the phone closes ResQ, an SOS from the last 12 hours starts again when ResQ restarts or you open it.</string>
+    <string name="guide_updates_title">How often ResQ updates</string>
+    <string name="guide_updates_1">Your SOS stays on the air the whole time. Only the position is refreshed on a timer: every 1, 5 or 15 minutes (Settings → Send frequency, 5 minutes by default).</string>
+    <string name="guide_updates_2">Each update gets a fresh GPS position, and nearby phones pick up the new position and message. A longer interval saves battery, but the position shown can be older.</string>
+    <string name="guide_updates_3">Battery saver (Settings) sends an update only once an hour, whatever the frequency says, so the phone lasts longest. The position can then be up to an hour old.</string>
+    <string name="guide_updates_4">A change to your message goes out within a few seconds, at any frequency.</string>
+    <string name="guide_updates_5">A phone that hears nothing new from you for about twice your interval (at least 10 minutes, at most 2 hours) shows “Signal lost” and your last known position.</string>
     <string name="guide_helper_title">If you want to help</string>
     <string name="guide_helper_1">Open the Scan screen and press Start scan. Your phone listens for SOS from nearby phones and passes them on to others, so they travel further.</string>
     <string name="guide_helper_2">Each card shows the message, the position and how long ago it was heard. Copy puts the coordinates on the clipboard for a map app.</string>
     <string name="guide_helper_3">Signal lost means nothing has been heard from them for a while. The position shown is the last one known.</string>
     <string name="guide_hops_title">Reading “relayed ×N”</string>
-    <string name="guide_hops">No label means your phone heard the sender directly, so they are within Bluetooth range, tens of metres. relayed ×1 means one other phone passed it on, relayed ×2 means two, and so on. A higher number means the sender may be further away and the copy is more indirect. Use the position and its age to find them.</string>
+    <string name="guide_hops">No label means your phone heard the sender directly, so they are within Bluetooth range (tens of metres). relayed ×1 means one other phone passed it on, relayed ×2 means two, and so on. A higher number means the sender may be further away and the copy is more indirect. Use the position and its age to find them.</string>
     <string name="guide_ready_title">Get ready before an emergency</string>
     <string name="guide_ready_1">Set My location in Settings, such as your room, floor or building.</string>
     <string name="guide_ready_2">Allow all permissions, and turn Location on.</string>
     <string name="guide_ready_3">Turn off battery optimisation for ResQ in your phone settings, so Android does not stop it.</string>
-    <string name="guide_ready_4">Keep some battery. Battery saver in Settings sends less often to make it last.</string>
+    <string name="guide_ready_4">Keep some battery. If it runs low, turn on Battery saver in Settings.</string>
     <string name="guide_button_understand">I understand</string>
     <string name="guide_button_back">Back</string>
+
+    <!-- Battery optimisation -->
+    <string name="settings_battery_optimisation">Battery optimisation</string>
+    <string name="battery_open">Open battery settings</string>
+    <string name="battery_exempt">Not restricted</string>
+    <string name="battery_help_intro">Android may stop ResQ to save battery, which would end an SOS or a scan.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.resq.app
 
+import com.resq.app.core.battery.BatteryOptimisation
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.graphics.Color
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
                     onRequestBluetoothEnable = ::requestBluetoothEnable,
                     onOpenAppSettings = ::openAppSettings,
                     onOpenLocationSettings = ::openLocationSettings,
+                    onOpenBatterySettings = ::openBatterySettings,
                 )
             }
         }
@@ -80,6 +82,10 @@ class MainActivity : ComponentActivity() {
         startActivity(
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
         )
+    }
+
+    private fun openBatterySettings() {
+        BatteryOptimisation.openSettings(this)
     }
 
     private fun openLocationSettings() {

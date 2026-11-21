@@ -2,6 +2,8 @@ package com.resq.app.ui.navigation
 
 import com.resq.app.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -38,6 +40,7 @@ fun ResQNavHost(
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenBatterySettings: () -> Unit,
 ) {
     val navController = rememberNavController()
 
@@ -75,6 +78,12 @@ fun ResQNavHost(
         NavHost(
             navController = navController,
             startDestination = ResQDestination.SENDER.route,
+            // Tabs swap at once. The default cross-fade keeps the old screen visible for a moment, so the
+            // Send screen's message box showed through on top of the Scan screen.
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
             // consumeWindowInsets so a screen's own imePadding() only adds the
             // keyboard height that isn't already covered by this padding.
             modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
@@ -98,6 +107,7 @@ fun ResQNavHost(
                     onOpenAppSettings = onOpenAppSettings,
                     onOpenLocationSettings = onOpenLocationSettings,
                     onOpenGuide = onOpenGuide,
+                    onOpenBatterySettings = onOpenBatterySettings,
                 )
             }
         }

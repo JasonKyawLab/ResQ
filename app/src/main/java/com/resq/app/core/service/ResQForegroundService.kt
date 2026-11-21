@@ -7,6 +7,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import com.resq.app.core.battery.BatteryMonitor
 import com.resq.app.core.ble.BeaconFlags
 import com.resq.app.core.ble.BeaconPayload
 import com.resq.app.core.ble.BleCapability
@@ -347,7 +348,7 @@ class ResQForegroundService : Service() {
         locator.sessionController.recordBatteryPercent(batteryPercent)
 
         val flags = (if (message.isNotBlank()) BeaconFlags.HAS_FULL_MESSAGE else 0) or
-            (if (batteryPercent in 0..15) BeaconFlags.BATTERY_CRITICAL else 0) or
+            (if (BatteryMonitor.isCritical(batteryPercent)) BeaconFlags.BATTERY_CRITICAL else 0) or
             (if (fix == null) BeaconFlags.POSITION_UNKNOWN else 0)
 
         val counter = updateCounter

@@ -32,6 +32,7 @@ fun ResQRoot(
     onRequestBluetoothEnable: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
+    onOpenBatterySettings: () -> Unit,
 ) {
     // Null until the saved flag has been read, so the guide does not flash up for a returning user.
     val introSeen by remember(settings) { settings.settings.map<ResQSettings, Boolean?> { it.introSeen } }
@@ -49,6 +50,7 @@ fun ResQRoot(
                 onOpenAppSettings = onOpenAppSettings,
                 onOpenLocationSettings = onOpenLocationSettings,
                 onOpenGuide = { showGuide = true },
+                onOpenBatterySettings = onOpenBatterySettings,
             )
             if (showGuide) {
                 BackHandler { showGuide = false }

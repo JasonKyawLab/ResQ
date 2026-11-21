@@ -41,8 +41,6 @@ object BleCapability {
         return BleReadiness.Ready
     }
 
-    fun isBluetoothEnabled(context: Context): Boolean = adapter(context)?.isEnabled == true
-
     fun hasBleHardware(context: Context): Boolean =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 

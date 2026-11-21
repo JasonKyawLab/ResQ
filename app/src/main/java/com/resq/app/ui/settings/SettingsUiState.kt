@@ -17,6 +17,8 @@ data class SettingsUiState(
     val locationPermissionStatus: PermissionStatus = PermissionStatus.DENIED,
     val locationServiceStatus: PermissionStatus = PermissionStatus.DENIED,
     val notificationStatus: PermissionStatus = PermissionStatus.GRANTED,
+    /** GRANTED when ResQ is exempt from Android battery optimisation, DENIED when it may be stopped. */
+    val batteryOptimisationStatus: PermissionStatus = PermissionStatus.GRANTED,
 ) {
     /** Drives the "describe your location in the message" tip — see LocationCapability's doc. */
     val locationUnreliable: Boolean

@@ -20,8 +20,6 @@ object BatteryMonitor {
         return level.coerceIn(0, 100)
     }
 
-    fun isCritical(context: Context): Boolean {
-        val level = currentPercent(context)
-        return level in 0..CRITICAL_THRESHOLD_PERCENT
-    }
+    /** True when [percent] (as read by [currentPercent]) is low enough to tell helpers the phone is nearly flat. */
+    fun isCritical(percent: Int): Boolean = percent in 0..CRITICAL_THRESHOLD_PERCENT
 }

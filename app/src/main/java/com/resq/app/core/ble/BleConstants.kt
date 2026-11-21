@@ -27,13 +27,4 @@ object BleConstants {
     val GATT_SERVICE_UUID: UUID = UUID.fromString("8f1a2b3c-4d5e-6f70-8192-a3b4c5d6e7f0")
     val GATT_SOS_RECORD_CHARACTERISTIC_UUID: UUID =
         UUID.fromString("8f1a2b3c-4d5e-6f70-8192-a3b4c5d6e7f1")
-
-    /** Standard descriptor every notifying characteristic needs for the GATT spec's sake. */
-    val CLIENT_CONFIG_DESCRIPTOR_UUID: UUID =
-        UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-
-    fun beaconServiceParcelUuid(): android.os.ParcelUuid =
-        android.os.ParcelUuid.fromString(
-            String.format("0000%04x-0000-1000-8000-00805f9b34fb", BEACON_SERVICE_UUID_16)
-        )
 }

@@ -1,5 +1,7 @@
 package com.resq.app.ui.settings
 
+import com.resq.app.core.permissions.PermissionStatus
+import com.resq.app.core.battery.BatteryOptimisation
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -55,6 +57,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             locationPermissionStatus = LocationCapability.permissionStatus(application),
             locationServiceStatus = LocationCapability.serviceStatus(application),
             notificationStatus = PermissionManager.notificationStatus(application),
+            batteryOptimisationStatus = if (BatteryOptimisation.isExempt(application)) PermissionStatus.GRANTED else PermissionStatus.DENIED,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 

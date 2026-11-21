@@ -187,11 +187,15 @@ pass, before the build is signed and uploaded.
       cleared. One resume action (`ACTION_RESUME`) brings back an SOS, scanning or both.
       Debug line in Settings: "Scanning saved". Still to test on the phone.
 - [x] Make sure the restarted service shows its notification straight away.
-- [ ] Battery optimisation row in Settings, like the permission rows: shows
-      whether ResQ is exempt, opens the system battery page (no special
-      permission), and gives short steps for Xiaomi, Oppo, Huawei and Samsung
-      (auto-start, lock in recents). The restricted "ignore battery
-      optimisations" permission waits until Play's policy is checked.
+- [x] Battery optimisation row in Settings (under Permissions). Changed after the phone test: an
+      app can only see Android's own "don't optimise" list, not Samsung's Never sleeping apps or
+      other makers' lists, and the stock "Allow background usage" switch is the default Optimized
+      state, so a red "Not set" was often wrong. Now it is green "Not restricted" only when
+      Android confirms the exemption, and otherwise a plain row with an Open button (no red).
+      Open goes to Android's battery optimisation page, or ResQ's own settings page if missing.
+      Maker-specific steps (Samsung, Xiaomi, Oppo, Huawei) were tried and removed: too much text
+      on the screen. The row sits under the Set / Not set / Unavailable legend. No special
+      permission is used. Still to test on a second brand.
 - [x] Check that advertising keeps running after another phone connects and
       disconnects; restart it if it does not.
 
@@ -306,7 +310,9 @@ When a phone hears sender X, update number u, hop h:
       permissions).
       Built: Settings section "How ResQ works" opens the same guide over the screens (button Back,
       system Back works); it explains what is sent, limits, three steps, help, helper, the hop count
-      ("relayed ×N") and getting ready.
+      ("relayed ×N"), how often ResQ updates (send frequency, battery saver, the message-edit
+      delay and when others show Signal lost), and getting ready. Sections are collapsed to their titles (tap to open); on first launch the two safety
+      sections ("What ResQ sends", "What it cannot do") start open.
 - [x] **Empty-state hints**, one line each where it applies. For example on the
       Scan screen with nothing found: "Nothing nearby yet. ResQ listens for SOS
       from nearby phones and passes them on."
@@ -314,7 +320,7 @@ When a phone hears sender X, update number u, hop h:
 ### 9. Tooling and docs
       Built on Scan: "Nothing nearby yet. ResQ listens for SOS from nearby phones and passes them on."
       while scanning, and "Scan is off. Press Start scan to listen for SOS from nearby phones." when off.
-- [ ] Debug-only demo helper that fills the Scan list with fake entries, for
+- [x] Debug-only demo helper that fills the Scan list with fake entries, for
       checking the Copy button and layout and for a Receiver screenshot with fake
       coordinates. Debug build only, never in the release.
 - [x] Move all UI text into `strings.xml` (needed for the new screens, and for any

@@ -39,8 +39,8 @@ inline fun debugRows(build: () -> List<DebugRow>): List<DebugRow> =
 fun DebugPanel(
     title: String,
     rows: List<DebugRow> = emptyList(),
-    modifier: Modifier = Modifier,
     actions: List<DebugAction> = emptyList(),
+    modifier: Modifier = Modifier,
 ) {
     if (!BuildConfig.DEBUG || (rows.isEmpty() && actions.isEmpty())) return
     Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
