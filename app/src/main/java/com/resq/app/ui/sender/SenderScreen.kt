@@ -1,6 +1,12 @@
 package com.resq.app.ui.sender
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +57,6 @@ import com.resq.app.ui.components.AppMark
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.rememberDraftField
 import com.resq.app.ui.components.StatusCard
-import com.resq.app.ui.components.TipCard
 import com.resq.app.ui.components.StatusRow
 import com.resq.app.ui.theme.BeaconAmber
 import com.resq.app.ui.theme.BeaconGreen
@@ -94,17 +99,6 @@ fun SenderRoute(
         modifier = modifier,
     )
 }
-
-/** Tap-to-add phrases, for someone who is hurt, scared, or not writing in their first language. */
-private val QUICK_PHRASES = listOf(
-    "Trapped",
-    "Injured",
-    "Need medical help",
-    "Need water",
-    "Lost",
-    "Child with me",
-    "Elderly person with me",
-)
 
 @Composable
 private fun SenderScreen(
@@ -176,9 +170,7 @@ private fun SenderScreen(
                 )
             }
 
-            if (state.locationUnreliable) {
-                TipCard("Location tip", "GPS isn't available right now — describe where you are in the message below.", BeaconAmber)
-            }
+            val isAcquiringFirstFix = state.isBroadcasting && state.lastFix == null
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -234,13 +226,31 @@ private fun SenderScreen(
                 }
             }
 
+            // Shown right after Start with an empty message: one tap adds what you need. The SOS is
+            // already on the air without it, and the edit goes out a moment after the tap.
+            if (state.isBroadcasting && message.value.text.isBlank()) {
+                PresetCards(
+                    onFill = { phrase ->
+                        message.value = TextFieldValue(phrase, TextRange(phrase.length))
+                        onMessageChanged(phrase)
+                    },
+                )
+            }
+
             BeaconToggleButton(
                 isActive = state.isBroadcasting,
                 onToggle = onToggleBroadcast,
-                modifier = Modifier.padding(vertical = 12.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
 
-            val isAcquiringFirstFix = state.isBroadcasting && state.lastFix == null
+            if (state.locationUnreliable) {
+                Text(
+                    text = "No GPS right now — say where you are in the message.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = BeaconAmber,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -296,7 +306,7 @@ private fun SenderScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                QUICK_PHRASES.forEach { phrase ->
+                SOS_PHRASES.forEach { phrase ->
                     SuggestionChip(
                         onClick = {
                             val current = message.value.text.trimEnd()
@@ -340,3 +350,40 @@ private fun formatTimestamp(state: SenderUiState): String {
 }
 
 private fun formatBattery(percent: Int): String = if (percent < 0) "—" else "$percent%"
+
+@Composable
+private fun PresetCards(onFill: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Your SOS is on the air. Tap to tell helpers what you need:",
+            style = MaterialTheme.typography.titleSmall,
+            color = TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        SOS_PHRASES.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                pair.forEach { phrase ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 64.dp)
+                            .background(SurfaceCard, RoundedCornerShape(14.dp))
+                            .border(1.5.dp, SignalRed, RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { onFill(phrase) }
+                            .padding(12.dp),
+                    ) {
+                        Text(
+                            text = phrase,
+                            color = TextPrimary,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

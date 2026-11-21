@@ -259,11 +259,15 @@ When a phone hears sender X, update number u, hop h:
       this app run already holds a fix from an earlier SOS.
 
 ### 8. Screens and help text
-- [ ] **Preset cards** on the Send screen: 4 to 6 large cards, shown only while the
-      message is empty and nothing is sending (so the screen stays clean). Tap
-      fills the message; long press fills it and starts. The saved location line
-      is always included. The quick-phrase chips stay for adding detail while
-      typing, and both use one shared phrase list.
+- [x] **Preset cards** on the Send screen. Pressing Start with an empty message starts
+      at once (an SOS never waits on a choice) and six cards appear ("Your SOS is on
+      the air. Tap to tell helpers what you need"). A tap fills the message and the
+      edit goes out after the 2 s pause. Cards hide once there is text or when
+      stopped. Chips and cards share one list (`SosPhrases.kt`). The no-GPS tip is one
+      amber line. Screen order, as chosen: header, message box and location note,
+      cards, Start button, amber line, status line, status card. The Start button sits
+      low on purpose; revisit if it is hard to reach in the phone test.
+      Still to test on the phone.
 - [ ] Send screen: "Another phone has passed on your SOS" when an echo of the
       current (or a recent own) session ID arrives with the relayed flag. The phone
       scans at low power while sending to hear it.
@@ -356,8 +360,8 @@ The decision rules become plain Kotlin so these run on a Mac:
       shows the first as cancelled (unverified) and the second as new.
 - [ ] Echo: with a helper phone scanning, the sender shows "Another phone has
       passed on your SOS".
-- [ ] Preset cards: a tap only fills, a long press starts, and nothing starts by
-      accident in a pocket.
+- [ ] Preset cards: appear only after Start with an empty message; one tap fills it
+      and the update reaches another phone.
 - [ ] First-launch screen appears once; "How ResQ works" reopens it.
 - [ ] Release APK (minified) smoke test on at least two phone brands.
 - [ ] Android 6 (API 23), a mid version, and the newest version.
@@ -496,8 +500,8 @@ years. These rules keep old and new phones able to see each other:
 - Times: system clock (UTC seconds) for position time and SOS started; the
   stopwatch (`elapsedRealtime`) for "heard X ago"; ages can be added later as an
   extra.
-- Presets: cards that fill the message (long press also starts), shown only when
-  the message is empty and idle. Chips stay for adding detail while typing.
+- Presets: Start always starts at once; cards then appear while the message is empty
+  and a tap fills it. Chips stay for adding detail while typing.
 - Battery: a Settings row that opens the system battery page, not the restricted
   permission, until Play's policy is checked.
 - Resume after Android kills the app goes into v1.0.0; the boot receiver waits for
