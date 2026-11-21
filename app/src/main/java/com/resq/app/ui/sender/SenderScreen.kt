@@ -1,5 +1,7 @@
 package com.resq.app.ui.sender
 
+import com.resq.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
@@ -151,7 +153,7 @@ private fun SenderScreen(
             ) {
                 AppMark()
                 Text(
-                    text = "ResQ",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineMedium,
                     color = TextPrimary,
                 )
@@ -159,13 +161,13 @@ private fun SenderScreen(
 
             when {
                 !state.permissionsGranted -> ActionBanner(
-                    message = "Bluetooth & location permissions are needed to broadcast.",
-                    actionLabel = "Grant",
+                    message = stringResource(R.string.send_banner_permissions),
+                    actionLabel = stringResource(R.string.action_grant),
                     onAction = onRequestPermissions,
                 )
                 !state.bluetoothReady -> ActionBanner(
-                    message = "Bluetooth is off — turn it on to broadcast.",
-                    actionLabel = "Turn on",
+                    message = stringResource(R.string.send_banner_bluetooth_off),
+                    actionLabel = stringResource(R.string.action_turn_on),
                     onAction = onRequestBluetoothEnable,
                 )
             }
@@ -188,13 +190,13 @@ private fun SenderScreen(
                         }
                         onMessageChanged(capped)
                     },
-                    label = { Text("SOS message") },
-                    placeholder = { Text("Describe your situation…") },
+                    label = { Text(stringResource(R.string.send_message_label)) },
+                    placeholder = { Text(stringResource(R.string.send_message_placeholder)) },
                     supportingText = {
                         val used = SosMessage.compose(state.locationNote, message.value.text)
                             .toByteArray(Charsets.UTF_8).size
                         Text(
-                            text = "$used / $MAX_MESSAGE_BYTES",
+                            text = stringResource(R.string.char_count, used, MAX_MESSAGE_BYTES),
                             color = if (used >= MAX_MESSAGE_BYTES) BeaconAmber else TextSecondary,
                         )
                     },
@@ -219,7 +221,7 @@ private fun SenderScreen(
 
                 if (state.locationNote.isNotBlank()) {
                     Text(
-                        text = "Sent with your location: ${state.locationNote.trim()} (change in Settings)",
+                        text = stringResource(R.string.send_location_note_line, state.locationNote.trim()),
                         style = MaterialTheme.typography.labelSmall,
                         color = TextSecondary,
                     )
@@ -245,7 +247,7 @@ private fun SenderScreen(
 
             if (state.locationUnreliable) {
                 Text(
-                    text = "No GPS right now — say where you are in the message.",
+                    text = stringResource(R.string.send_no_gps_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = BeaconAmber,
                     textAlign = TextAlign.Center,
@@ -255,10 +257,10 @@ private fun SenderScreen(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = when {
-                        isAcquiringFirstFix && state.positionUnknown -> "Broadcasting — no GPS signal yet"
-                        isAcquiringFirstFix -> "Broadcasting — acquiring GPS…"
-                        state.isBroadcasting -> "Broadcasting SOS"
-                        else -> "Idle — tap to broadcast"
+                        isAcquiringFirstFix && state.positionUnknown -> stringResource(R.string.send_status_no_gps)
+                        isAcquiringFirstFix -> stringResource(R.string.send_status_acquiring)
+                        state.isBroadcasting -> stringResource(R.string.send_status_broadcasting)
+                        else -> stringResource(R.string.send_status_idle)
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = if (state.isBroadcasting) BeaconGreen else TextSecondary,
@@ -276,22 +278,22 @@ private fun SenderScreen(
             StatusCard(
                 rows = listOf(
                     StatusRow(
-                        "Status",
-                        if (state.isBroadcasting) "Broadcasting" else "Idle",
+                        stringResource(R.string.send_row_status),
+                        stringResource(if (state.isBroadcasting) R.string.send_row_status_broadcasting else R.string.send_row_status_idle),
                         if (state.isBroadcasting) BeaconGreen else TextSecondary,
                     ),
-                    StatusRow("Frequency", formatFrequency(state)),
+                    StatusRow(stringResource(R.string.send_row_frequency), formatFrequency(state)),
                     StatusRow(
-                        "Last coordinate",
+                        stringResource(R.string.send_row_last_coordinate),
                         formatCoordinate(state),
                         if (isAcquiringFirstFix) BeaconAmber else null,
                     ),
                     StatusRow(
-                        "Last sent",
+                        stringResource(R.string.send_row_last_sent),
                         formatTimestamp(state),
                         if (isAcquiringFirstFix) BeaconAmber else null,
                     ),
-                    StatusRow("Battery", formatBattery(state.batteryPercent)),
+                    StatusRow(stringResource(R.string.send_row_battery), formatBattery(state.batteryPercent)),
                 ),
             )
         }
@@ -306,11 +308,13 @@ private fun SenderScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SOS_PHRASES.forEach { phrase ->
+                SOS_PHRASES.forEach { phraseId ->
+                    val phrase = stringResource(phraseId)
+                    val resources = LocalContext.current.resources
                     SuggestionChip(
                         onClick = {
                             val current = message.value.text.trimEnd()
-                            val joined = if (current.isEmpty()) phrase else "$current. $phrase"
+                            val joined = if (current.isEmpty()) phrase else resources.getString(R.string.send_phrase_joiner, current, phrase)
                             // Add the whole phrase or nothing: a half-cut phrase is worse than none.
                             if (joined.toByteArray(Charsets.UTF_8).size <= messageBudget) {
                                 message.value = TextFieldValue(joined, TextRange(joined.length))
@@ -333,36 +337,43 @@ private fun SenderScreen(
     }
 }
 
-private fun formatFrequency(state: SenderUiState): String =
-    if (state.batterySaverEnabled) "${state.effectiveInterval.label} (battery saver)" else state.effectiveInterval.label
+@Composable
+private fun formatFrequency(state: SenderUiState): String {
+    val label = stringResource(state.effectiveInterval.labelRes)
+    return if (state.batterySaverEnabled) stringResource(R.string.send_frequency_battery_saver, label) else label
+}
 
+@Composable
 private fun formatCoordinate(state: SenderUiState): String {
     val fix = state.lastFix
     if (fix != null) return String.format(Locale.US, "%.5f, %.5f", fix.latitude, fix.longitude)
-    if (state.isBroadcasting && state.positionUnknown) return "No GPS yet"
-    return if (state.isBroadcasting) "Acquiring…" else "—"
+    if (state.isBroadcasting && state.positionUnknown) return stringResource(R.string.send_no_gps_yet)
+    return stringResource(if (state.isBroadcasting) R.string.acquiring else R.string.dash)
 }
 
+@Composable
 private fun formatTimestamp(state: SenderUiState): String {
     val epochMillis = state.lastBroadcastAtEpochMillis
     if (epochMillis != null) return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
-    return if (state.isBroadcasting) "Acquiring…" else "—"
+    return stringResource(if (state.isBroadcasting) R.string.acquiring else R.string.dash)
 }
 
-private fun formatBattery(percent: Int): String = if (percent < 0) "—" else "$percent%"
+@Composable
+private fun formatBattery(percent: Int): String = if (percent < 0) stringResource(R.string.dash) else "$percent%"
 
 @Composable
 private fun PresetCards(onFill: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Your SOS is on the air. Tap to tell helpers what you need:",
+            text = stringResource(R.string.send_presets_prompt),
             style = MaterialTheme.typography.titleSmall,
             color = TextPrimary,
             fontWeight = FontWeight.SemiBold,
         )
         SOS_PHRASES.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                pair.forEach { phrase ->
+                pair.forEach { phraseId ->
+                    val phrase = stringResource(phraseId)
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier

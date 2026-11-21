@@ -29,6 +29,8 @@ data class ResQSettings(
     /** Saved "scanning is on" state, so it can come back after Android kills the app. */
     val scanActive: Boolean = false,
     val scanUpdatedSeconds: Long = 0L,
+    /** The first-launch guide has been read and accepted. */
+    val introSeen: Boolean = false,
 )
 
 /**
@@ -49,6 +51,7 @@ class SettingsRepository(private val context: Context) {
         val SESSION_COUNTER = intPreferencesKey("session_counter")
         val SESSION_UPDATED = longPreferencesKey("session_updated_seconds")
         val SESSION_ACTIVE = booleanPreferencesKey("session_active")
+        val INTRO_SEEN = booleanPreferencesKey("intro_seen")
         val SCAN_ACTIVE = booleanPreferencesKey("scan_active")
         val SCAN_UPDATED = longPreferencesKey("scan_updated_seconds")
         val RECENT_OWN_IDS = stringPreferencesKey("recent_own_ids")
@@ -68,6 +71,7 @@ class SettingsRepository(private val context: Context) {
             sessionUpdatedSeconds = prefs[Keys.SESSION_UPDATED] ?: 0L,
             scanActive = prefs[Keys.SCAN_ACTIVE] ?: false,
             scanUpdatedSeconds = prefs[Keys.SCAN_UPDATED] ?: 0L,
+            introSeen = prefs[Keys.INTRO_SEEN] ?: false,
         )
     }
 
@@ -131,6 +135,10 @@ class SettingsRepository(private val context: Context) {
             // Cleaning up an expired session passes null and leaves the time alone.
             if (stoppedAtSeconds != null) it[Keys.SESSION_UPDATED] = stoppedAtSeconds
         }
+    }
+
+    suspend fun markIntroSeen() {
+        context.dataStore.edit { it[Keys.INTRO_SEEN] = true }
     }
 
     /** Scanning was switched on (or is still running): remember it, and when it was last known alive. */

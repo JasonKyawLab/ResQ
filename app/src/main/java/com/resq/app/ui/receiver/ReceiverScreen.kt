@@ -1,5 +1,8 @@
 package com.resq.app.ui.receiver
 
+import com.resq.app.R
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -85,7 +88,7 @@ private fun ReceiverScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Nearby SOS", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
+            Text(stringResource(R.string.scan_title), style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
             Button(
                 onClick = onToggleListening,
                 colors = ButtonDefaults.buttonColors(
@@ -94,14 +97,14 @@ private fun ReceiverScreen(
                 ),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text(if (state.isListening) "Stop scan" else "Start scan")
+                Text(stringResource(if (state.isListening) R.string.scan_stop else R.string.scan_start))
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = if (state.isListening) "Scanning • relaying what we hear" else "Scan is off",
+            text = stringResource(if (state.isListening) R.string.scan_status_on else R.string.scan_status_off),
             style = MaterialTheme.typography.bodyMedium,
             color = if (state.isListening) BeaconGreen else TextSecondary,
         )
@@ -112,16 +115,16 @@ private fun ReceiverScreen(
             !state.permissionsGranted -> {
                 Spacer(Modifier.height(12.dp))
                 ActionBanner(
-                    message = "Bluetooth & location permissions are needed to scan.",
-                    actionLabel = "Grant",
+                    message = stringResource(R.string.scan_banner_permissions),
+                    actionLabel = stringResource(R.string.action_grant),
                     onAction = onRequestPermissions,
                 )
             }
             !state.bluetoothReady -> {
                 Spacer(Modifier.height(12.dp))
                 ActionBanner(
-                    message = "Bluetooth is off — turn it on to scan.",
-                    actionLabel = "Turn on",
+                    message = stringResource(R.string.scan_banner_bluetooth_off),
+                    actionLabel = stringResource(R.string.action_turn_on),
                     onAction = onRequestBluetoothEnable,
                 )
             }
@@ -148,16 +151,18 @@ private fun EmptyLogState(isListening: Boolean) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = BeaconGreen)
                 Text(
-                    "No SOS signals detected yet.",
+                    stringResource(R.string.scan_empty_listening),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
+                    textAlign = TextAlign.Center,
                 )
             }
         } else {
             Text(
-                "Start scan to listen for SOS broadcasts.",
+                stringResource(R.string.scan_empty_off),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -190,7 +195,7 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
                 )
                 if (entry.isRelayed) {
                     Text(
-                        "relayed ×${entry.hopCount}",
+                        stringResource(R.string.scan_relayed, entry.hopCount),
                         style = MaterialTheme.typography.labelSmall,
                         color = TextSecondary,
                     )
@@ -235,18 +240,18 @@ private fun SosLogCard(entry: SosLogItemUi, onDismiss: () -> Unit) {
             }
             Row {
             TextButton(onClick = onDismiss) {
-                Text("Dismiss", color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.scan_dismiss), color = TextSecondary, fontWeight = FontWeight.SemiBold)
             }
             if (entry.positionKnown) TextButton(
                 onClick = {
                     clipboard.setText(AnnotatedString(entry.coordinateText))
                     // Android 13+ shows its own "copied" confirmation; older versions need one.
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                        Toast.makeText(context, "Coordinates copied", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.scan_copied), Toast.LENGTH_SHORT).show()
                     }
                 },
             ) {
-                Text("Copy", color = SignalRed, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.scan_copy), color = SignalRed, fontWeight = FontWeight.SemiBold)
             }
             }
         }

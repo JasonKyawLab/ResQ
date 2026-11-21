@@ -249,10 +249,17 @@ When a phone hears sender X, update number u, hop h:
       broadcast ever went out); entries are kept 72 hours (Live, Signal lost, Marked
       safe, Archived); only live ones, and a fresh "marked safe" for 15 minutes, are
       relayed; Dismiss hides an entry until a newer update arrives.
-- [ ] **Zombie risk, still open.** "Last heard" is refreshed by any sighting of the
-      same update, including a relay. Two phones that keep relaying a dead sender's
-      last update to each other would keep it "Live". Fix: stage by the time since
-      the last *new* update or the last *direct* hearing (needs one more column).
+- [x] **Zombie risk, fixed without a new column.** Only a new update or a direct (hop 0)
+      hearing restarts "Live / Signal lost" and "Heard X ago" (`UpdateRules.refreshesLiveClock`);
+      a relayed repeat of the update we hold does not, and reading the full record is not a
+      sign of life either. Two helpers passing a dead SOS to each other now let it go stale
+      and stop relaying it. Heartbeat: a sender with no GPS fix re-broadcasts "position
+      unknown" with a newer counter once per send interval, so one reachable only through
+      relays does not look "Signal lost". The same when GPS is lost after a fix: the last
+      position is repeated once per interval with its original time (receivers still see its
+      real age). Cost: every counter bump makes a helper fetch the
+      record once, as any update does. Trade-off: a living sender behind slow relays can show
+      "Signal lost" a little early, the safe direction. 6 new tests.
 
 ### 7. Sending
 - [x] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Today a
@@ -287,24 +294,34 @@ When a phone hears sender X, update number u, hop h:
       and "Heard 2 days ago (Nov 19, 21:59)"; the stage and the text use the same age.
       Position age comes from the sender's own clock, so it is hidden when that clock
       is ahead of ours; a sender clock far behind would show a too-old position.
-- [ ] **First-launch screen**, shown once: what is sent (location and message, to
+- [x] **First-launch screen**, shown once: what is sent (location and message, to
       anyone nearby with ResQ), that it is not encrypted, that it only works if
       another phone is in range, that it does not contact emergency services, and
       three short steps. Button: "I understand".
-- [ ] **Settings, "How ResQ works"** (must explain the hop count, see section 4): the full guide, reopening the first-launch
+      Built as the full guide in `ui/guide/GuideScreen.kt`, shown once (saved flag `intro_seen`),
+      button "I understand". Still to test on the phone.
+- [x] **Settings, "How ResQ works"** (must explain the hop count, see section 4): the full guide, reopening the first-launch
       text. Sections: if you need help, if you want to help, and "get ready before
       an emergency" (set "My location", turn off battery optimisation, allow
       permissions).
-- [ ] **Empty-state hints**, one line each where it applies. For example on the
+      Built: Settings section "How ResQ works" opens the same guide over the screens (button Back,
+      system Back works); it explains what is sent, limits, three steps, help, helper, the hop count
+      ("relayed ×N") and getting ready.
+- [x] **Empty-state hints**, one line each where it applies. For example on the
       Scan screen with nothing found: "Nothing nearby yet. ResQ listens for SOS
       from nearby phones and passes them on."
 
 ### 9. Tooling and docs
+      Built on Scan: "Nothing nearby yet. ResQ listens for SOS from nearby phones and passes them on."
+      while scanning, and "Scan is off. Press Start scan to listen for SOS from nearby phones." when off.
 - [ ] Debug-only demo helper that fills the Scan list with fake entries, for
       checking the Copy button and layout and for a Receiver screenshot with fake
       coordinates. Debug build only, never in the release.
-- [ ] Move all UI text into `strings.xml` (needed for the new screens, and for any
+- [x] Move all UI text into `strings.xml` (needed for the new screens, and for any
       translation later).
+      Done for every screen, banners, dialogs, buttons, phrases, intervals and signal labels. Left in
+      Kotlin on purpose: the age wording in `EntryLifecycle` ("Heard 3 h ago") because its unit tests pin it,
+      and the debug-only rows. Do those when a second language is added.
 - [ ] Update the privacy policy: entries are no longer removed after about an hour,
       and the sender ID is no longer made once on first install but anew at each
       Start and re-upload `store/privacy/index.html` to the same

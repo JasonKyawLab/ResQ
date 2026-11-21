@@ -1,5 +1,7 @@
 package com.resq.app.ui.components
 
+import com.resq.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -84,7 +86,7 @@ fun BeaconToggleButton(
                 ),
         ) {
             Text(
-                text = if (isActive) "STOP" else "START",
+                text = stringResource(if (isActive) R.string.button_stop else R.string.button_start),
                 color = if (isActive) TextPrimary else TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,

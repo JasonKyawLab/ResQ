@@ -42,7 +42,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         "Scanning saved",
                         if (!settings.scanActive) "no" else "yes, ${(now - settings.scanUpdatedSeconds) / 60} min ago",
                     ),
-                    DebugRow("Send interval", (if (settings.batterySaverEnabled) BroadcastInterval.BATTERY_SAVER else settings.sendInterval).label),
+                    DebugRow("Send interval", (if (settings.batterySaverEnabled) BroadcastInterval.BATTERY_SAVER else settings.sendInterval).name),
                 )
             },
             locationNote = settings.locationNote,

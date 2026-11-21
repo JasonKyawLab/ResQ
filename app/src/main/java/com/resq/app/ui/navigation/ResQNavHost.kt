@@ -1,5 +1,7 @@
 package com.resq.app.ui.navigation
 
+import com.resq.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -35,6 +37,7 @@ fun ResQNavHost(
     onRequestBluetoothEnable: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
+    onOpenGuide: () -> Unit,
 ) {
     val navController = rememberNavController()
 
@@ -47,21 +50,21 @@ fun ResQNavHost(
 
                 NavItem(
                     destination = ResQDestination.SENDER,
-                    label = "Send",
+                    label = stringResource(R.string.nav_sender),
                     icon = Icons.Filled.Warning,
                     currentDestination = currentDestination,
                     navController = navController,
                 )
                 NavItem(
                     destination = ResQDestination.RECEIVER,
-                    label = "Scan",
+                    label = stringResource(R.string.nav_receiver),
                     icon = Icons.AutoMirrored.Filled.List,
                     currentDestination = currentDestination,
                     navController = navController,
                 )
                 NavItem(
                     destination = ResQDestination.SETTINGS,
-                    label = "Settings",
+                    label = stringResource(R.string.nav_settings),
                     icon = Icons.Filled.Settings,
                     currentDestination = currentDestination,
                     navController = navController,
@@ -94,6 +97,7 @@ fun ResQNavHost(
                     onRequestRuntimePermissions = onRequestPermissions,
                     onOpenAppSettings = onOpenAppSettings,
                     onOpenLocationSettings = onOpenLocationSettings,
+                    onOpenGuide = onOpenGuide,
                 )
             }
         }

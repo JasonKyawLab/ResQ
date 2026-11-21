@@ -1,5 +1,7 @@
 package com.resq.app.ui.settings
 
+import com.resq.app.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,6 +69,7 @@ fun SettingsRoute(
     onRequestRuntimePermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
+    onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -85,6 +88,7 @@ fun SettingsRoute(
         onRequestRuntimePermissions = onRequestRuntimePermissions,
         onOpenAppSettings = onOpenAppSettings,
         onOpenLocationSettings = onOpenLocationSettings,
+        onOpenGuide = onOpenGuide,
         modifier = modifier,
     )
 }
@@ -100,6 +104,7 @@ private fun SettingsScreen(
     onRequestRuntimePermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenLocationSettings: () -> Unit,
+    onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locationNote = rememberDraftField(state.locationNote)
@@ -112,17 +117,15 @@ private fun SettingsScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(28.dp),
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
+        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
 
         if (state.locationUnreliable) {
-            TipCard("Location tip", "GPS isn't available right now — you can still describe where you are in the SOS message text.", BeaconAmber)
+            TipCard(stringResource(R.string.settings_location_tip_label), stringResource(R.string.settings_location_tip), BeaconAmber)
         }
 
-        SettingsSection(title = "My location") {
+        SettingsSection(title = stringResource(R.string.settings_my_location)) {
             Text(
-                "Your room, floor or building. It's saved on this phone and added to the start " +
-                    "of every SOS, so it still goes out if you can barely type. Update it when " +
-                    "you move. Anyone nearby can read it.",
+                stringResource(R.string.settings_my_location_help),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
             )
@@ -138,11 +141,11 @@ private fun SettingsScreen(
                     }
                     onLocationNoteChanged(capped)
                 },
-                label = { Text("Room / floor / building") },
-                placeholder = { Text("e.g. Room 305, 3rd floor, Sunrise Hotel") },
+                label = { Text(stringResource(R.string.settings_my_location_label)) },
+                placeholder = { Text(stringResource(R.string.settings_my_location_placeholder)) },
                 supportingText = {
                     val used = locationNote.value.text.toByteArray(Charsets.UTF_8).size
-                    Text("$used / ${SosMessage.LOCATION_NOTE_MAX_BYTES}", color = TextSecondary)
+                    Text(stringResource(R.string.char_count, used, SosMessage.LOCATION_NOTE_MAX_BYTES), color = TextSecondary)
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -161,16 +164,16 @@ private fun SettingsScreen(
             )
         }
 
-        SettingsSection(title = "Battery saver") {
+        SettingsSection(title = stringResource(R.string.settings_battery_saver)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Minimal UI, longest interval", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                    Text(stringResource(R.string.settings_battery_saver_title), style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                     Text(
-                        "Forces hourly broadcasts regardless of the setting below.",
+                        stringResource(R.string.settings_battery_saver_help),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary,
                     )
@@ -183,9 +186,9 @@ private fun SettingsScreen(
             }
         }
 
-        SettingsSection(title = "Send frequency") {
+        SettingsSection(title = stringResource(R.string.settings_frequency)) {
             Text(
-                "How often a fresh GPS fix is fetched and re-broadcast. Longer intervals save battery.",
+                stringResource(R.string.settings_frequency_help),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
             )
@@ -206,71 +209,83 @@ private fun SettingsScreen(
             if (state.batterySaverEnabled) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Locked while battery saver is on — turn it off to pick a interval.",
+                    stringResource(R.string.settings_frequency_locked),
                     style = MaterialTheme.typography.labelSmall,
                     color = TextSecondary,
                 )
             }
         }
 
-        SettingsSection(title = "Permissions") {
-            PermissionRow("Bluetooth adapter", state.bluetoothAdapterStatus, onRequestBluetoothEnable, "Turn on")
+        SettingsSection(title = stringResource(R.string.settings_permissions)) {
+            PermissionRow(stringResource(R.string.perm_bluetooth_adapter), state.bluetoothAdapterStatus, onRequestBluetoothEnable, stringResource(R.string.action_turn_on))
             PermissionRow(
-                "Bluetooth — scan",
+                stringResource(R.string.perm_bluetooth_scan),
                 state.bluetoothScanStatus,
                 onRequestRuntimePermissions,
-                "Grant",
+                stringResource(R.string.action_grant),
             )
             PermissionRow(
-                "Bluetooth — advertise",
+                stringResource(R.string.perm_bluetooth_advertise),
                 state.bluetoothAdvertiseStatus,
                 onRequestRuntimePermissions,
-                "Grant",
+                stringResource(R.string.action_grant),
             )
             PermissionRow(
-                "Bluetooth — connect",
+                stringResource(R.string.perm_bluetooth_connect),
                 state.bluetoothConnectStatus,
                 onRequestRuntimePermissions,
-                "Grant",
+                stringResource(R.string.action_grant),
             )
             PermissionRow(
-                "Location permission",
+                stringResource(R.string.perm_location),
                 state.locationPermissionStatus,
                 onRequestRuntimePermissions,
-                "Grant",
+                stringResource(R.string.action_grant),
             )
             PermissionRow(
-                "Location services",
+                stringResource(R.string.perm_location_services),
                 state.locationServiceStatus,
                 onOpenLocationSettings,
-                "Turn on",
+                stringResource(R.string.action_turn_on),
             )
             PermissionRow(
-                "Notifications",
+                stringResource(R.string.perm_notifications),
                 state.notificationStatus,
                 onRequestRuntimePermissions,
-                "Grant",
+                stringResource(R.string.action_grant),
             )
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                LegendDot(BeaconGreen, "Set")
-                LegendDot(SignalRed, "Not set")
-                LegendDot(BeaconAmber, "Unavailable")
+                LegendDot(BeaconGreen, stringResource(R.string.perm_set))
+                LegendDot(SignalRed, stringResource(R.string.perm_not_set))
+                LegendDot(BeaconAmber, stringResource(R.string.perm_unavailable))
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                "Manage everything from the system settings page if a toggle doesn't respond.",
+                stringResource(R.string.perm_manage_system),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
                 modifier = Modifier.clickable(onClick = onOpenAppSettings),
             )
         }
 
-        var confirmClear by remember { mutableStateOf(false) }
-        SettingsSection(title = "Received SOS") {
+        SettingsSection(title = stringResource(R.string.settings_guide_title)) {
             Text(
-                "Removes every SOS this phone has heard, including marked-safe ones. Anything still " +
-                    "being sent nearby will show up again when it is heard.",
+                stringResource(R.string.settings_guide_help),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onOpenGuide,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.settings_guide_button)) }
+        }
+
+        var confirmClear by remember { mutableStateOf(false) }
+        SettingsSection(title = stringResource(R.string.settings_received)) {
+            Text(
+                stringResource(R.string.settings_received_help),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
             )
@@ -280,32 +295,32 @@ private fun SettingsScreen(
                 border = BorderStroke(1.5.dp, SignalRed),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = SignalRed),
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Clear all received SOS") }
+            ) { Text(stringResource(R.string.settings_clear_button)) }
         }
         if (confirmClear) {
             AlertDialog(
                 onDismissRequest = { confirmClear = false },
-                title = { Text("Clear all received SOS?") },
-                text = { Text("Every received SOS is removed from this phone. This cannot be undone.") },
+                title = { Text(stringResource(R.string.settings_clear_title)) },
+                text = { Text(stringResource(R.string.settings_clear_body)) },
                 confirmButton = {
                     TextButton(onClick = { confirmClear = false; onClearReceived() }) {
-                        Text("Clear all", color = SignalRed)
+                        Text(stringResource(R.string.settings_clear_confirm), color = SignalRed)
                     }
                 },
-                dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
+                dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.settings_cancel)) } },
             )
         }
 
-        SettingsSection(title = "Device") {
+        SettingsSection(title = stringResource(R.string.settings_device)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Last SOS ID", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text(stringResource(R.string.settings_last_sos_id), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(state.senderIdDisplay, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, fontWeight = FontWeight.Medium)
             }
             DebugPanel(title = "Saved SOS", rows = state.debugRows)
         }
 
         Text(
-            "Developed by jasonkyawlab",
+            stringResource(R.string.settings_credit),
             style = MaterialTheme.typography.labelSmall,
             color = TextSecondary,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -349,7 +364,7 @@ private fun IntervalRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            interval.label,
+            stringResource(interval.labelRes),
             style = MaterialTheme.typography.bodyLarge,
             color = if (enabled) TextPrimary else TextSecondary,
         )
@@ -367,9 +382,9 @@ private fun PermissionRow(
     actionLabel: String,
 ) {
     val (dotColor, statusText) = when (status) {
-        PermissionStatus.GRANTED -> BeaconGreen to "Set"
-        PermissionStatus.DENIED -> SignalRed to "Not set"
-        PermissionStatus.UNAVAILABLE -> BeaconAmber to "Unavailable"
+        PermissionStatus.GRANTED -> BeaconGreen to stringResource(R.string.perm_set)
+        PermissionStatus.DENIED -> SignalRed to stringResource(R.string.perm_not_set)
+        PermissionStatus.UNAVAILABLE -> BeaconAmber to stringResource(R.string.perm_unavailable)
     }
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),

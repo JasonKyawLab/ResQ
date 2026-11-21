@@ -12,4 +12,144 @@
     <string name="service_notification_title_ending">Telling nearby phones you stopped</string>
     <string name="service_notification_title_both">Broadcasting &amp; listening</string>
     <string name="service_notification_stop_action">Stop</string>
+
+    <!-- Intervals, signal -->
+    <string name="interval_1_min">Every 1 min</string>
+    <string name="interval_5_min">Every 5 min</string>
+    <string name="interval_15_min">Every 15 min</string>
+    <string name="interval_hourly">Hourly</string>
+    <string name="signal_strong">Strong</string>
+    <string name="signal_medium">Medium</string>
+    <string name="signal_weak">Weak</string>
+
+    <!-- Shared -->
+    <string name="action_grant">Grant</string>
+    <string name="action_turn_on">Turn on</string>
+    <string name="button_start">START</string>
+    <string name="button_stop">STOP</string>
+    <string name="char_count">%1$d / %2$d</string>
+    <string name="dash">—</string>
+    <string name="acquiring">Acquiring…</string>
+
+    <!-- Send screen -->
+    <string name="send_banner_permissions">Bluetooth &amp; location permissions are needed to broadcast.</string>
+    <string name="send_banner_bluetooth_off">Bluetooth is off — turn it on to broadcast.</string>
+    <string name="send_message_label">SOS message</string>
+    <string name="send_message_placeholder">Describe your situation…</string>
+    <string name="send_location_note_line">Sent with your location: %1$s (change in Settings)</string>
+    <string name="send_no_gps_hint">No GPS right now — say where you are in the message.</string>
+    <string name="send_status_no_gps">Broadcasting — no GPS signal yet</string>
+    <string name="send_status_acquiring">Broadcasting — acquiring GPS…</string>
+    <string name="send_status_broadcasting">Broadcasting SOS</string>
+    <string name="send_status_idle">Idle — tap to broadcast</string>
+    <string name="send_row_status">Status</string>
+    <string name="send_row_status_broadcasting">Broadcasting</string>
+    <string name="send_row_status_idle">Idle</string>
+    <string name="send_row_frequency">Frequency</string>
+    <string name="send_row_last_coordinate">Last coordinate</string>
+    <string name="send_row_last_sent">Last sent</string>
+    <string name="send_row_battery">Battery</string>
+    <string name="send_frequency_battery_saver">%1$s (battery saver)</string>
+    <string name="send_no_gps_yet">No GPS yet</string>
+    <string name="send_presets_prompt">Your SOS is on the air. Tap to tell helpers what you need:</string>
+    <string name="send_phrase_joiner">%1$s. %2$s</string>
+
+    <!-- Phrases (preset cards and chips) -->
+    <string name="phrase_trapped">Trapped</string>
+    <string name="phrase_injured">Injured</string>
+    <string name="phrase_medical">Need medical help</string>
+    <string name="phrase_water">Need water</string>
+    <string name="phrase_lost">Lost</string>
+    <string name="phrase_child_elderly">Child or elderly person with me</string>
+
+    <!-- Scan screen -->
+    <string name="scan_title">Nearby SOS</string>
+    <string name="scan_start">Start scan</string>
+    <string name="scan_stop">Stop scan</string>
+    <string name="scan_status_on">Scanning • relaying what we hear</string>
+    <string name="scan_status_off">Scan is off</string>
+    <string name="scan_banner_permissions">Bluetooth &amp; location permissions are needed to scan.</string>
+    <string name="scan_banner_bluetooth_off">Bluetooth is off — turn it on to scan.</string>
+    <string name="scan_empty_listening">Nothing nearby yet. ResQ listens for SOS from nearby phones and passes them on.</string>
+    <string name="scan_empty_off">Scan is off. Press Start scan to listen for SOS from nearby phones.</string>
+    <string name="scan_relayed">relayed ×%1$d</string>
+    <string name="scan_dismiss">Dismiss</string>
+    <string name="scan_copy">Copy</string>
+    <string name="scan_copied">Coordinates copied</string>
+    <string name="scan_stage_live">Live</string>
+    <string name="scan_stage_signal_lost">Signal lost · last known position, %1$s old</string>
+    <string name="scan_stage_marked_safe">Marked safe by sender (unverified)</string>
+    <string name="scan_stage_archived">Archived · last heard %1$s ago</string>
+    <string name="scan_no_message">(location only — no message received yet)</string>
+    <string name="scan_position_unknown">Position unknown (sender has no GPS signal)</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_location_tip_label">Location tip</string>
+    <string name="settings_location_tip">GPS isn\'t available right now — you can still describe where you are in the SOS message text.</string>
+    <string name="settings_my_location">My location</string>
+    <string name="settings_my_location_help">Your room, floor or building. It\'s saved on this phone and added to the start of every SOS, so it still goes out if you can barely type. Update it when you move. Anyone nearby can read it.</string>
+    <string name="settings_my_location_label">Room / floor / building</string>
+    <string name="settings_my_location_placeholder">e.g. Room 305, 3rd floor, Sunrise Hotel</string>
+    <string name="settings_battery_saver">Battery saver</string>
+    <string name="settings_battery_saver_title">Minimal UI, longest interval</string>
+    <string name="settings_battery_saver_help">Forces hourly broadcasts regardless of the setting below.</string>
+    <string name="settings_frequency">Send frequency</string>
+    <string name="settings_frequency_help">How often a fresh GPS fix is fetched and re-broadcast. Longer intervals save battery.</string>
+    <string name="settings_frequency_locked">Locked while battery saver is on — turn it off to pick an interval.</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="perm_bluetooth_adapter">Bluetooth adapter</string>
+    <string name="perm_bluetooth_scan">Bluetooth — scan</string>
+    <string name="perm_bluetooth_advertise">Bluetooth — advertise</string>
+    <string name="perm_bluetooth_connect">Bluetooth — connect</string>
+    <string name="perm_location">Location permission</string>
+    <string name="perm_location_services">Location services</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_set">Set</string>
+    <string name="perm_not_set">Not set</string>
+    <string name="perm_unavailable">Unavailable</string>
+    <string name="perm_manage_system">Manage everything from the system settings page if a toggle doesn\'t respond.</string>
+    <string name="settings_received">Received SOS</string>
+    <string name="settings_received_help">Removes every SOS this phone has heard, including marked-safe ones. Anything still being sent nearby will show up again when it is heard.</string>
+    <string name="settings_clear_button">Clear all received SOS</string>
+    <string name="settings_clear_title">Clear all received SOS?</string>
+    <string name="settings_clear_body">Every received SOS is removed from this phone. This cannot be undone.</string>
+    <string name="settings_clear_confirm">Clear all</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_device">Device</string>
+    <string name="settings_last_sos_id">Last SOS ID</string>
+    <string name="settings_credit">Developed by jasonkyawlab</string>
+    <string name="settings_guide_title">How ResQ works</string>
+    <string name="settings_guide_help">What ResQ sends, how to use it, and how to get ready before an emergency.</string>
+    <string name="settings_guide_button">Open the guide</string>
+
+    <!-- Guide / first launch -->
+    <string name="guide_title">How ResQ works</string>
+    <string name="guide_first_title">Before you start</string>
+    <string name="guide_intro_sends_title">What ResQ sends</string>
+    <string name="guide_intro_sends">When you press Start, your phone broadcasts your location and your message over Bluetooth to anyone nearby who has ResQ. It is not encrypted, so anyone close enough can read it.</string>
+    <string name="guide_intro_range_title">What it cannot do</string>
+    <string name="guide_intro_range">ResQ only works if another phone with ResQ is within Bluetooth range, and it does not contact emergency services. If you can, call your local emergency number as well.</string>
+    <string name="guide_steps_title">Three steps</string>
+    <string name="guide_step_1">Allow Bluetooth, location and notifications when asked.</string>
+    <string name="guide_step_2">Add where you are: Settings → My location.</string>
+    <string name="guide_step_3">Press Start on the Send screen. Keep the phone on; ResQ keeps broadcasting in the background.</string>
+    <string name="guide_help_title">If you need help</string>
+    <string name="guide_help_1">Press Start. Your SOS goes out at once, even before GPS has a position. A fresh position follows as soon as there is one.</string>
+    <string name="guide_help_2">Tap one of the cards that appear, or type a short message. The change reaches others after a moment.</string>
+    <string name="guide_help_3">Press Stop only when you are safe. Nearby phones are told you stopped, and show it as unverified.</string>
+    <string name="guide_help_4">If the app is closed by the phone, ResQ brings an SOS from the last 12 hours back when it restarts or when you open it.</string>
+    <string name="guide_helper_title">If you want to help</string>
+    <string name="guide_helper_1">Open the Scan screen and press Start scan. Your phone listens for SOS from nearby phones and passes them on to others, so they travel further.</string>
+    <string name="guide_helper_2">Each card shows the message, the position and how long ago it was heard. Copy puts the coordinates on the clipboard for a map app.</string>
+    <string name="guide_helper_3">Signal lost means nothing has been heard from them for a while. The position shown is the last one known.</string>
+    <string name="guide_hops_title">Reading “relayed ×N”</string>
+    <string name="guide_hops">No label means your phone heard the sender directly, so they are within Bluetooth range, tens of metres. relayed ×1 means one other phone passed it on, relayed ×2 means two, and so on. A higher number means the sender may be further away and the copy is more indirect. Use the position and its age to find them.</string>
+    <string name="guide_ready_title">Get ready before an emergency</string>
+    <string name="guide_ready_1">Set My location in Settings, such as your room, floor or building.</string>
+    <string name="guide_ready_2">Allow all permissions, and turn Location on.</string>
+    <string name="guide_ready_3">Turn off battery optimisation for ResQ in your phone settings, so Android does not stop it.</string>
+    <string name="guide_ready_4">Keep some battery. Battery saver in Settings sends less often to make it last.</string>
+    <string name="guide_button_understand">I understand</string>
+    <string name="guide_button_back">Back</string>
 </resources>

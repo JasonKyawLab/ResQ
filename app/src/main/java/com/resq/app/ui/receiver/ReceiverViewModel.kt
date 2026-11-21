@@ -1,5 +1,6 @@
 package com.resq.app.ui.receiver
 
+import com.resq.app.R
 import android.app.Application
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
@@ -30,6 +31,7 @@ import java.util.Locale
 class ReceiverViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locator = ServiceLocator.getInstance(application)
+    private val app: Application = application
 
     /** Entries change stage with time even when nothing is saved, so re-check every minute. */
     private val minuteTick = flow {
@@ -87,10 +89,10 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
         )
         val stage = EntryLifecycle.stage(entity.isCancelled, age, entity.sendIntervalMinutes)
         val status = when (stage) {
-            EntryStage.LIVE -> "Live"
-            EntryStage.SIGNAL_LOST -> "Signal lost · last known position, ${EntryLifecycle.ageText(age)} old"
-            EntryStage.MARKED_SAFE -> "Marked safe by sender (unverified)"
-            EntryStage.ARCHIVED -> "Archived · last heard ${EntryLifecycle.ageText(age)} ago"
+            EntryStage.LIVE -> app.getString(R.string.scan_stage_live)
+            EntryStage.SIGNAL_LOST -> app.getString(R.string.scan_stage_signal_lost, EntryLifecycle.ageText(age))
+            EntryStage.MARKED_SAFE -> app.getString(R.string.scan_stage_marked_safe)
+            EntryStage.ARCHIVED -> app.getString(R.string.scan_stage_archived, EntryLifecycle.ageText(age))
         }
         return buildItem(entity, stage, status, age, now)
     }
@@ -104,9 +106,9 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
     ): SosLogItemUi = SosLogItemUi(
         senderId = entity.senderId,
         displayId = "#" + Integer.toHexString(entity.senderId).uppercase().takeLast(6),
-        message = entity.message.ifBlank { "(location only — no message received yet)" },
+        message = entity.message.ifBlank { app.getString(R.string.scan_no_message) },
         coordinateText = if (entity.positionUnknown) {
-            "Position unknown (sender has no GPS signal)"
+            app.getString(R.string.scan_position_unknown)
         } else {
             String.format(Locale.US, "%.5f, %.5f", entity.latitude, entity.longitude)
         },

@@ -1,5 +1,6 @@
 package com.resq.app.ui.components
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +22,7 @@ fun SignalBadge(strength: SignalStrength, modifier: Modifier = Modifier) {
         SignalStrength.WEAK -> SignalRed
     }
     Text(
-        text = strength.label,
+        text = stringResource(strength.labelRes),
         color = color,
         style = MaterialTheme.typography.labelSmall,
         modifier = modifier

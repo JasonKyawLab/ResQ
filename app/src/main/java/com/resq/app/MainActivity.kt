@@ -15,7 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.resq.app.core.di.ServiceLocator
 import com.resq.app.core.permissions.PermissionManager
-import com.resq.app.ui.navigation.ResQNavHost
+import com.resq.app.ui.ResQRoot
 import com.resq.app.ui.theme.ResQTheme
 
 class MainActivity : ComponentActivity() {
@@ -43,7 +43,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ResQTheme {
-                ResQNavHost(
+                ResQRoot(
+                    settings = ServiceLocator.getInstance(this).settingsRepository,
                     onRequestPermissions = ::requestAllPermissions,
                     onRequestBluetoothEnable = ::requestBluetoothEnable,
                     onOpenAppSettings = ::openAppSettings,
