@@ -38,6 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.resq.app.ui.components.ActionBanner
+import com.resq.app.ui.components.ScreenHeader
+import com.resq.app.ui.components.ScreenHorizontalPadding
+import com.resq.app.ui.components.ScreenVerticalPadding
 import com.resq.app.ui.components.SignalBadge
 import com.resq.app.ui.theme.BeaconGreen
 import com.resq.app.ui.theme.SignalRed
@@ -82,24 +85,22 @@ private fun ReceiverScreen(
     debugActions: List<com.resq.app.ui.components.DebugAction>,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.scan_title), style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
-            Button(
-                onClick = onToggleListening,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (state.isListening) SurfaceCard else SignalRed,
-                    contentColor = TextPrimary,
-                ),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text(stringResource(if (state.isListening) R.string.scan_stop else R.string.scan_start))
-            }
-        }
+    Column(modifier = modifier.fillMaxSize().padding(horizontal = ScreenHorizontalPadding, vertical = ScreenVerticalPadding)) {
+        ScreenHeader(
+            title = stringResource(R.string.scan_title),
+            trailing = {
+                Button(
+                    onClick = onToggleListening,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (state.isListening) SurfaceCard else SignalRed,
+                        contentColor = TextPrimary,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text(stringResource(if (state.isListening) R.string.scan_stop else R.string.scan_start))
+                }
+            },
+        )
 
         Spacer(Modifier.height(8.dp))
 

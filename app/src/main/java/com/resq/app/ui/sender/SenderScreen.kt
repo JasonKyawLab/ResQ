@@ -56,6 +56,9 @@ import com.resq.app.core.ble.truncateUtf8
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.ui.components.ActionBanner
 import com.resq.app.ui.components.AppMark
+import com.resq.app.ui.components.ScreenHeader
+import com.resq.app.ui.components.ScreenHorizontalPadding
+import com.resq.app.ui.components.ScreenVerticalPadding
 import com.resq.app.ui.components.BeaconToggleButton
 import com.resq.app.ui.components.rememberDraftField
 import com.resq.app.ui.components.StatusCard
@@ -142,22 +145,11 @@ private fun SenderScreen(
                 .verticalScroll(rememberScrollState())
                 // Tap anywhere outside the field to put the keyboard away.
                 .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
-                .padding(horizontal = 24.dp, vertical = 20.dp),
+                .padding(horizontal = ScreenHorizontalPadding, vertical = ScreenVerticalPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                AppMark()
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = TextPrimary,
-                )
-            }
+            ScreenHeader(title = stringResource(R.string.app_name), leading = { AppMark() })
 
             when {
                 !state.permissionsGranted -> ActionBanner(

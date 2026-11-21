@@ -54,6 +54,9 @@ import com.resq.app.core.ble.truncateUtf8
 import com.resq.app.core.data.model.BroadcastInterval
 import com.resq.app.core.data.model.SosMessage
 import com.resq.app.core.permissions.PermissionStatus
+import com.resq.app.ui.components.ScreenHeader
+import com.resq.app.ui.components.ScreenHorizontalPadding
+import com.resq.app.ui.components.ScreenVerticalPadding
 import com.resq.app.ui.components.StatusCard
 import com.resq.app.ui.components.TipCard
 import com.resq.app.ui.components.StatusRow
@@ -120,10 +123,10 @@ private fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = ScreenHorizontalPadding, vertical = ScreenVerticalPadding),
         verticalArrangement = Arrangement.spacedBy(28.dp),
     ) {
-        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
+        ScreenHeader(title = stringResource(R.string.settings_title))
 
         if (state.locationUnreliable) {
             TipCard(stringResource(R.string.settings_location_tip_label), stringResource(R.string.settings_location_tip), BeaconAmber)
