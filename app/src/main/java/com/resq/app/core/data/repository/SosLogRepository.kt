@@ -77,9 +77,17 @@ class SosLogRepository(
                         hopCount = UpdateRules.lowestHop(existing.hopCount, payload.hopCount),
                         // Heard directly at least once means Nearby.
                         isRelayed = existing.isRelayed && payload.isRelayed,
-                        lastSeenAtEpochMillis = detection.seenAtEpochMillis,
-                        lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
-                    )
+                    ).let {
+                        // A relayed repeat of the update we hold must not restart the Live clock.
+                        if (UpdateRules.refreshesLiveClock(verdict, payload.hopCount)) {
+                            it.copy(
+                                lastSeenAtEpochMillis = detection.seenAtEpochMillis,
+                                lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                            )
+                        } else {
+                            it
+                        }
+                    }
                 )
             }
             UpdateVerdict.SAVE_AND_FETCH -> dao.upsert(
@@ -170,7 +178,9 @@ class SosLogRepository(
                 rssi = rssi,
                 hopCount = record.hopCount,
                 firstSeenAtEpochMillis = existing?.firstSeenAtEpochMillis ?: now,
-                lastSeenAtEpochMillis = now,
+                // Reading the full record is not a new sign of life: the beacon that led here already
+                // refreshed the clock if it should have. A sender never seen before starts it now.
+                lastSeenAtEpochMillis = existing?.lastSeenAtEpochMillis ?: now,
                 hasFullMessage = true,
                 updateCounter = existing?.updateCounter ?: 0,
                 isRelayed = existing?.isRelayed ?: false,
@@ -179,7 +189,7 @@ class SosLogRepository(
                 positionTimeSeconds = record.positionTimeSeconds,
                 sosStartedSeconds = record.sosStartedSeconds,
                 sendIntervalMinutes = record.sendIntervalMinutes,
-                lastSeenElapsedMillis = SystemClock.elapsedRealtime(),
+                lastSeenElapsedMillis = existing?.lastSeenElapsedMillis ?: SystemClock.elapsedRealtime(),
                 dismissed = existing?.dismissed ?: false,
             )
         )

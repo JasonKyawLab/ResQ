@@ -1,6 +1,7 @@
 package com.resq.app.core.ble
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -48,5 +49,31 @@ class UpdateRulesTest {
         var hop = 0
         for (heard in 1..10) hop = UpdateRules.lowestHop(hop, heard)
         assertEquals(0, hop)
+    }
+
+    @Test fun aNewUpdateRestartsTheLiveClockAtAnyHop() {
+        assertTrue(UpdateRules.refreshesLiveClock(UpdateVerdict.SAVE_AND_FETCH, 0))
+        assertTrue(UpdateRules.refreshesLiveClock(UpdateVerdict.SAVE_AND_FETCH, 3))
+    }
+
+    @Test fun aDirectHearingOfTheSameUpdateRestartsTheLiveClock() =
+        assertTrue(UpdateRules.refreshesLiveClock(UpdateVerdict.REFRESH_ONLY, 0))
+
+    @Test fun aRelayedRepeatOfTheSameUpdateDoesNotRestartTheLiveClock() {
+        assertFalse(UpdateRules.refreshesLiveClock(UpdateVerdict.REFRESH_ONLY, 1))
+        assertFalse(UpdateRules.refreshesLiveClock(UpdateVerdict.REFRESH_ONLY, 4))
+    }
+
+    @Test fun anOlderUpdateNeverRestartsIt() =
+        assertFalse(UpdateRules.refreshesLiveClock(UpdateVerdict.IGNORE, 0))
+
+    @Test fun twoHelpersPassingADeadSosBackAndForthLetItGoStale() {
+        // The sender's last update is counter 7. From then on only relayed repeats of 7 arrive.
+        var lastFreshAt = 1_000L
+        for (t in 2_000L..20_000L step 1_000L) {
+            val verdict = UpdateRules.decide(storedCounter = 7, incomingCounter = 7)
+            if (UpdateRules.refreshesLiveClock(verdict, hopCount = 1)) lastFreshAt = t
+        }
+        assertEquals(1_000L, lastFreshAt)
     }
 }

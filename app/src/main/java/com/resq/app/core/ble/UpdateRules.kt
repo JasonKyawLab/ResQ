@@ -44,6 +44,18 @@ object UpdateRules {
     }
 
     /**
+     * Whether hearing this beacon proves the sender is still alive, so the "Live / Signal lost" clock and
+     * "Heard X ago" restart. Only a new update (the sender made it) or a direct hearing (hop 0, from the
+     * sender's own phone) does. A relayed repeat of the update we already hold proves only that a helper
+     * still remembers it, so two helpers passing a dead SOS to each other cannot keep it "Live".
+     */
+    fun refreshesLiveClock(verdict: UpdateVerdict, hopCount: Int): Boolean = when (verdict) {
+        UpdateVerdict.SAVE_AND_FETCH -> true
+        UpdateVerdict.REFRESH_ONLY -> hopCount == 0
+        UpdateVerdict.IGNORE -> false
+    }
+
+    /**
      * Hop count to keep for the same update heard again: the lowest ever heard, so two
      * nearby relays passing it back and forth cannot inflate it. Hop is only a safety fuse.
      */

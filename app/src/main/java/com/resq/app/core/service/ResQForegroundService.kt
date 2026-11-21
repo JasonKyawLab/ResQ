@@ -91,6 +91,7 @@ class ResQForegroundService : Service() {
     private val refreshSignal = Channel<Unit>(Channel.CONFLATED)
     private var lastBroadcastMessage: String? = null
     private var lastBroadcastWasUnknown = false
+    private var lastBroadcastAtElapsed = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -162,6 +163,7 @@ class ResQForegroundService : Service() {
             sosStartedAtSeconds = session.startedAtSeconds
             lastBroadcastMessage = null
             lastBroadcastWasUnknown = false
+            lastBroadcastAtElapsed = 0L
             refreshSignal.tryReceive() // drop a request left over from an earlier SOS
             watchMessageEdits()
             var editRefresh = false
@@ -307,12 +309,27 @@ class ResQForegroundService : Service() {
         if (fix == null) {
             Logger.w(TAG) { "No GPS fix available this cycle" }
             // Nothing should mean "nothing on the air": with no position at all, broadcast the message and
-            // signal anyway, marked "position unknown". If an earlier position exists, its beacon keeps
-            // going and its real age is shown, which helps a rescuer more than "unknown".
+            // signal anyway, marked "position unknown". If an earlier position exists, it is repeated once per
+            // interval with its real age, which helps a rescuer more than "unknown".
             if (lastFix == null &&
-                PositionPlan.shouldBroadcastWithoutFix(lastBroadcastWasUnknown, lastBroadcastMessage, message)
+                PositionPlan.shouldBroadcastWithoutFix(
+                    lastBroadcastWasUnknown,
+                    lastBroadcastMessage,
+                    message,
+                    SystemClock.elapsedRealtime() - lastBroadcastAtElapsed,
+                    locator.settingsRepository.effectiveSendInterval().millis,
+                )
             ) {
                 broadcastUpdate(fix = null, message = message)
+            } else if (lastFix != null &&
+                PositionPlan.shouldRepeatLastPosition(
+                    SystemClock.elapsedRealtime() - lastBroadcastAtElapsed,
+                    locator.settingsRepository.effectiveSendInterval().millis,
+                )
+            ) {
+                // GPS was lost after a fix: repeat the last position (its own time stays, so receivers see its
+                // real age) with a newer counter, as a sign of life.
+                broadcastUpdate(fix = lastFix, message = message)
             }
             return false
         }
@@ -325,6 +342,7 @@ class ResQForegroundService : Service() {
         val senderId = sessionSenderId
         lastBroadcastMessage = message
         lastBroadcastWasUnknown = fix == null
+        lastBroadcastAtElapsed = SystemClock.elapsedRealtime()
         val batteryPercent = locator.batteryPercent()
         locator.sessionController.recordBatteryPercent(batteryPercent)
 
