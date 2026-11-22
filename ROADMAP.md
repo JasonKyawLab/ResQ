@@ -14,9 +14,19 @@ finished, and move finished work into [CHANGELOG.md](CHANGELOG.md).
 
 Status key: `[ ]` to do, `[x]` done, `[?]` still undecided.
 
-Current state: **v1.0.0 is not released.** The first Play Store build is
-still being finished, so the Bluetooth format below can still change freely
-until the day it ships (see "Format rules" at the bottom).
+## Where we are (22 November 2026)
+
+- **v1.0.0 is feature-complete and in Google Play review.** The closed-test release
+  (`versionCode 2`, `versionName 1.0.0`, package `com.jasonkyawlab.resq`) was submitted
+  for review on 22 November 2026. It is not public yet.
+- **Next, in order:** Google approves the closed test, the join link appears, 12 testers
+  opt in, and the test runs for 14 days. Then apply for production access, answer
+  Google's questions about the test, and publish. Fixes found by testers ship as a new
+  `versionCode` (3, 4, ...) on the same track.
+- **The Bluetooth format is frozen from the closed test on.** Testers' phones will hold
+  this version, so follow "Format rules" at the bottom from now: only add, never change.
+- **Still open on my side of the release:** back up the signing key, write the 1.0.0
+  CHANGELOG entry on the day it is published, and the real-phone checks below.
 
 ---
 
@@ -24,11 +34,11 @@ until the day it ships (see "Format rules" at the bottom).
 
 Two messages travel over Bluetooth. The numbers are made-up examples, written
 in hex (two characters per byte), biggest part first. "Built" means the code
-does it today; "planned" means it is a v1.0.0 item below.
+does it.
 
 ### 1. The beacon (always on, no connection needed)
 
-Sent about once a second to every phone in range. 17 bytes planned (16 today).
+Sent about once a second to every phone in range. 17 bytes.
 
 ```
 A1 | 00 ED 28 99 | 00 21 89 15 | 00 92 96 E8 | 01 | 00 | 00 2A
@@ -36,13 +46,13 @@ A1 | 00 ED 28 99 | 00 21 89 15 | 00 92 96 E8 | 01 | 00 | 00 2A
 
 | Part | Bytes | Example | What it means | Status |
 |---|---|---|---|---|
-| Marker + version | 1 | `A1` | The first half (`A`) is a fixed ResQ marker and the second half (`1`) is the format version. A phone drops any packet whose marker is not `A`, which filters out most accidental matches from other Bluetooth devices, and ignores a version it does not know. Today the byte is plain `01`. | planned |
-| Sender ID | 4 | `00 ED 28 99` | A random number, shown as `#ED2899`. Not linked to a name or phone number. A **new one is made every time the user taps Start**, so nobody can follow one phone across days. Today it is made once on first install. | planned |
+| Marker + version | 1 | `A1` | The first half (`A`) is a fixed ResQ marker and the second half (`1`) is the format version. A phone drops any packet whose marker is not `A`, which filters out most accidental matches from other Bluetooth devices, and ignores a version it does not know. | built |
+| Sender ID | 4 | `00 ED 28 99` | A random number, shown as `#ED2899`. Not linked to a name or phone number. A **new one is made every time the user taps Start**, so nobody can follow one phone across days. | built |
 | Latitude | 4 | `00 21 89 15` | Degrees x 100,000: 2,197,781 is **21.97781** (about 1 m). South is negative. | built |
 | Longitude | 4 | `00 92 96 E8` | Same idea: 9,606,888 is **96.06888**. West is negative. | built |
-| Flags | 1 | `01` | Switches added together: 1 = full message waiting, 2 = relayed copy, 4 = battery critical, 8 = cancelled (planned), 16 = position unknown (planned). Bits 32, 64 and 128 are reserved. | first three built |
+| Flags | 1 | `01` | Switches added together: 1 = full message waiting, 2 = relayed copy, 4 = battery critical, 8 = cancelled, 16 = position unknown. Bits 32, 64 and 128 are reserved. | built |
 | Hop count | 1 | `00` | Phones that have relayed it. 0 = heard directly from the sender. Capped at 6. | built |
-| Update counter | 2 | `00 2A` | 42. Starts at 0 with each new sender ID, then goes up only on a new GPS fix or a message edit. Lets a phone tell "same update" from "newer update" without connecting. Today it is 1 byte taken from the clock, which changes every second and cannot do this job. | planned |
+| Update counter | 2 | `00 2A` | 42. Starts at 0 with each new sender ID, then goes up only on a new GPS fix or a message edit. Lets a phone tell "same update" from "newer update" without connecting. | built |
 
 ### 2. The full record (fetched by connecting to the sender)
 
@@ -56,16 +66,16 @@ A1 | 00 ED 28 99 | 00 21 89 15 | 00 92 96 E8 | 00 1D | 52 6D 20 33 ... 72 65 64 
 
 | Part | Bytes | Example | What it means | Status |
 |---|---|---|---|---|
-| Marker + version | 1 | `A1` | Same as the beacon. | planned |
+| Marker + version | 1 | `A1` | Same as the beacon. | built |
 | Sender ID | 4 | `00 ED 28 99` | Same as the beacon. | built |
 | Latitude, longitude | 4 + 4 | `00 21 89 15`, `00 92 96 E8` | Same as the beacon. | built |
 | Message length | 2 | `00 1D` | 29, the number of message bytes that follow. | built |
 | Message | up to 180 | `52 6D 20 33 ...` | UTF-8 text: "Rm 305, 3F \| Trapped. Injured". The saved "My location" line, then ` \| `, then the typed message. Both share the 180-byte limit. Burmese and Thai use 3 bytes per character. | built |
 | Battery | 1 | `27` | 39 percent. | built |
 | Hop count | 1 | `00` | Same as the beacon. | built |
-| Extras | any | see below | A list of `type, length, value` items (TLV) until the end of the record. | planned |
+| Extras | any | see below | A list of `type, length, value` items (TLV) until the end of the record. | built |
 
-Extras planned for v1.0.0 (each is `type`, `length`, then the value):
+Extras in v1.0.0 (each is `type`, `length`, then the value):
 
 | Type | Length | Example | What it means |
 |---|---|---|---|
@@ -80,8 +90,7 @@ Reader rules for extras:
 3. Type `00` is reserved.
 4. If a type appears twice, the first one wins.
 
-Size: at most 197 bytes today, at most 212 planned. One packet carries 244, so
-it is still a single read.
+Size: at most 212 bytes. One packet carries 244, so it is still a single read.
 
 ### How the two fit together
 
@@ -99,9 +108,9 @@ it is still a single read.
 
 # **v1.0.0**
 
-First Play Store release (`versionCode 1`, `versionName 1.0.0`). Not released.
-Everything in "must do" has to be built, and everything in "must check" has to
-pass, before the build is signed and uploaded.
+First Play Store release (`versionName 1.0.0`). The closed-test build is
+`versionCode 2` (`versionCode 1` went to the internal test). Everything in "must do"
+is built. What is left is in "must check" and "Play Console and release hygiene".
 
 ## Done so far
 
@@ -117,7 +126,7 @@ pass, before the build is signed and uploaded.
       `store/privacy/index.html`)
 - [x] Two-phone test: beacon and full message received on a second phone
 
-## Decided in review (still to build)
+## Decided in review (all built except the echo line)
 
 - [x] **Marker `A1`** in the first byte of the beacon and the record (see above).
       It filters accidental matches. It does not save battery: the phone's own
@@ -140,8 +149,8 @@ pass, before the build is signed and uploaded.
   - The sender ID shown in Settings is now "Last SOS ID" (built).
   - The privacy policy and the Play data safety answer say the ID changes at
     each Start.
-- [ ] **"Clear all received SOS"** in Settings, with a confirmation dialog.
-- [ ] **Own echo shown on the Send screen.** When a relay of your own SOS is
+- [x] **"Clear all received SOS"** in Settings, with a confirmation dialog.
+- [ ] **Own echo shown on the Send screen** (moved to v1.1.0, see there). When a relay of your own SOS is
       heard, show "Another phone has passed on your SOS". It does not mean help
       is coming, so never word it that way. If none is heard, say nothing
       alarming ("No relay heard yet" is fine, never "nobody heard you"). This
@@ -185,7 +194,7 @@ pass, before the build is signed and uploaded.
       a kill does not. After a kill or when the app is opened it resumes if the last
       sign of life was under 12 hours ago and Bluetooth is ready; an older flag is
       cleared. One resume action (`ACTION_RESUME`) brings back an SOS, scanning or both.
-      Debug line in Settings: "Scanning saved". Still to test on the phone.
+      Debug line in Settings: "Scanning saved". Checked on the Samsung (resumed after a reinstall).
 - [x] Make sure the restarted service shows its notification straight away.
 - [x] Battery optimisation row in Settings (under Permissions). Changed after the phone test: an
       app can only see Android's own "don't optimise" list, not Samsung's Never sleeping apps or
@@ -195,7 +204,7 @@ pass, before the build is signed and uploaded.
       Open goes to Android's battery optimisation page, or ResQ's own settings page if missing.
       Maker-specific steps (Samsung, Xiaomi, Oppo, Huawei) were tried and removed: too much text
       on the screen. The row sits under the Set / Not set / Unavailable legend. No special
-      permission is used. Still to test on a second brand.
+      permission is used. Opens the system page on the Samsung; a second brand is still to check.
 - [x] Check that advertising keeps running after another phone connects and
       disconnects; restart it if it does not.
 
@@ -203,8 +212,8 @@ pass, before the build is signed and uploaded.
 - [x] Wait a random 0.5 to 3 seconds before connecting to a sender, so a crowd
       of helpers does not all connect at once.
 - [x] Back off after a failed connection (for example status 133).
-- [x] One connection per update (see the rules below). Today nothing limits it, so
-      a phone in range of a flagged beacon can reconnect over and over.
+- [x] One connection per update (see the rules below). Built, so a phone in range
+      of a flagged beacon no longer reconnects over and over.
 - [x] On the sender: disconnect a helper after the read or a time limit, and cap
       simultaneous connections, so one slow helper cannot hold a slot.
 - [x] If the larger MTU request returns false, carry on instead of waiting for the
@@ -266,8 +275,8 @@ When a phone hears sender X, update number u, hop h:
       "Signal lost" a little early, the safe direction. 6 new tests.
 
 ### 7. Sending
-- [x] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Today a
-      failed fix means nothing is broadcast, which fails exactly the person under
+- [x] Broadcast even with no GPS fix, marked "position unknown" (flag 16). Before this, a
+      failed fix meant nothing was broadcast, which fails exactly the person under
       rubble. The message, saved location and signal strength still help.
 - [x] A stale last-known fix shows its real age (today it is sent as if fresh).
       Built: the fix time is sent in the record, and the Receiver shows "Position X
@@ -288,7 +297,7 @@ When a phone hears sender X, update number u, hop h:
       amber line. Screen order, as chosen: header, message box and location note,
       cards, Start button, amber line, status line, status card. The Start button sits
       low on purpose; revisit if it is hard to reach in the phone test.
-      Still to test on the phone.
+      Checked on the Samsung.
 - [ ] ~~Send screen echo line~~ moved to v1.1.0 (see there): not needed to send or
       receive, and it adds scanning while sending that is not battery-tested.
 - [x] Settings: "Clear all received SOS" with a confirmation dialog. Built as a "Received SOS"
@@ -303,7 +312,7 @@ When a phone hears sender X, update number u, hop h:
       another phone is in range, that it does not contact emergency services, and
       three short steps. Button: "I understand".
       Built as the full guide in `ui/guide/GuideScreen.kt`, shown once (saved flag `intro_seen`),
-      button "I understand". Still to test on the phone.
+      button "I understand". Checked on the Samsung: appears once, reopens from Settings.
 - [x] **Settings, "How ResQ works"** (must explain the hop count, see section 4): the full guide, reopening the first-launch
       text. Sections: if you need help, if you want to help, and "get ready before
       an emergency" (set "My location", turn off battery optimisation, allow
@@ -316,10 +325,10 @@ When a phone hears sender X, update number u, hop h:
 - [x] **Empty-state hints**, one line each where it applies. For example on the
       Scan screen with nothing found: "Nothing nearby yet. ResQ listens for SOS
       from nearby phones and passes them on."
+      Built: that text while scanning, and "Scan is off. Press Start scan to listen for SOS
+      from nearby phones." when off.
 
 ### 9. Tooling and docs
-      Built on Scan: "Nothing nearby yet. ResQ listens for SOS from nearby phones and passes them on."
-      while scanning, and "Scan is off. Press Start scan to listen for SOS from nearby phones." when off.
 - [x] Debug-only demo helper that fills the Scan list with fake entries, for
       checking the Copy button and layout and for a Receiver screenshot with fake
       coordinates. Debug build only, never in the release.
@@ -335,14 +344,17 @@ When a phone hears sender X, update number u, hop h:
       battery level and other details sent, relaying of other people's SOS, the battery settings
       page. **Still to do on your side: upload it again to the same Cloudflare Pages project
       (`resq-privacy`); the URL stays the same.**
-- [x] Store description (`store/listing/en-US.md`: name 24/30, short 74/80, full 3074/4000, with the "not encrypted" and "does not replace emergency services" lines near the top and no "secure" or "private") with a "How it works" paragraph that says the broadcast is
-      not encrypted and that ResQ does not replace emergency services. No words
-      like "secure" or "private".
+- [x] Store description written and entered in Play Console (the text lives there; the file was
+      removed from the repo once the listing was done).
 
 ## Must check
 
 ### Automated tests (`./gradlew test`, no phones needed)
-The decision rules become plain Kotlin so these run on a Mac:
+The decision rules are plain Kotlin so these run on a Mac. **106 unit tests pass, 0
+failures** (UpdateRules, BlePayloadCodec, ConnectionRules, PositionPlan, ReadinessRefreshTrigger,
+OwnSessionIds, EntryTime, EntryLifecycle, BroadcastInterval, DemoEntries). The list below
+is the original plan; most items are covered, but I have not matched every number to a test,
+so check 11, 12, 20 and 23 before calling the list closed.
 1. Unknown sender: save, fetch, relay later
 2. Same update via two relays: no fetch, no re-relay, data unchanged
 3. Two relays echoing each other: hop stays 1
@@ -375,10 +387,10 @@ The decision rules become plain Kotlin so these run on a Mac:
 28. Clear all removes every received entry
 
 ### On real phones
-- [ ] Database migration from the current version opens without a crash.
-- [ ] The 17-byte beacon still starts advertising (no "data too large" error).
+- [x] Database migration from the current version opens without a crash. Opened fine over the old database.
+- [x] The 17-byte beacon still starts advertising (no "data too large" error). Seen in nRF Connect.
 - [ ] Two-phone test again with the final build: beacon, full message, Copy.
-- [ ] Kill the app while sending (swipe away, then force stop): the SOS resumes.
+- [x] Kill the app while sending (swipe away, then force stop): the SOS resumes. Checked with `am crash` and after a reinstall.
 - [ ] Screen-off test: sender in a locked pocket for 30 minutes, then 2 hours or
       more, on different phone brands. Watch it from a second phone (or an iPhone
       scanner) to confirm the beacon never stops.
@@ -391,20 +403,21 @@ The decision rules become plain Kotlin so these run on a Mac:
 - [ ] Multi-client stress test: 3 or 4 helper phones read from one sender at the
       same moment. Failed connections must not stop the sender's advertising. Do
       this with closed testers.
-- [ ] Battery row opens the system battery page on a Samsung and one other brand.
-- [ ] Start, Stop, Start again: the second SOS has a different ID. Another phone
-      shows the first as cancelled (unverified) and the second as new.
+- [x] Battery row opens the system battery page on a Samsung and one other brand. Samsung done; one other brand still to check.
+- [x] Start, Stop, Start again: the second SOS has a different ID. Another phone
+      shows the first as cancelled (unverified) and the second as new. Within 30 minutes it is the same ID with consecutive counters (by design, see above).
 - [ ] Preset cards: appear only after Start with an empty message; one tap fills it
       and the update reaches another phone.
-- [ ] First-launch screen appears once; "How ResQ works" reopens it.
-- [ ] Scanning resume: Scan on, crash the app (`am crash`), it keeps scanning; Scan off,
-      crash it, it stays off.
-- [ ] Release APK (minified) smoke test on at least two phone brands.
+- [x] First-launch screen appears once; "How ResQ works" reopens it. Done.
+- [x] Scanning resume: Scan on, crash the app (`am crash`), it keeps scanning; Scan off,
+      crash it, it stays off. Resume done.
+- [ ] Release APK (minified) smoke test on at least two phone brands. Samsung S9 done
+      (Play-installed and local release); a second brand is still open.
 - [ ] Android 6 (API 23), a mid version, and the newest version.
 - [ ] Large system font and a small screen: no clipped text.
-- [ ] Send with no GPS fix (indoors): still broadcasts, marked position unknown.
+- [x] Send with no GPS fix (indoors): still broadcasts, marked position unknown. Flags 11, heartbeat counter, recovery to 01 all seen.
 - [ ] Press Stop: other phones show the cancel. Kill the app: they do not.
-- [ ] Release APK contains no demo helper.
+- [x] Release APK contains no demo helper. Done.
 
 ### Play Console and release hygiene
 - [x] Package name: Play Console says `com.resq.app` is already taken by another app, so the public
@@ -412,20 +425,26 @@ The decision rules become plain Kotlin so these run on a Mac:
       `applicationId` changed; the code keeps its `com.resq.app` packages and namespace. **It can never
       be changed once a build is uploaded to Play.** For adb use the new id, and uninstall the old
       `com.resq.app.debug` from test phones: it is a separate app now.
-- [ ] Back up `~/.resq-signing/resq-upload.jks` and its passwords somewhere safe.
-      Losing them means no updates to the listing, ever.
-- [ ] 512x512 icon and 1024x500 feature graphic.
-- [ ] At least 2 phone screenshots with no real coordinates (blur them).
-- [x] Short (80 characters) and full descriptions (written, see `store/listing/en-US.md`), including that ResQ is not a
+- [ ] Back up `~/.resq-signing/resq-upload.jks` and its passwords somewhere safe, outside
+      this Mac. Losing them means no updates to the listing, ever.
+- [x] 512x512 icon and 1024x500 feature graphic (`store/graphics/`).
+- [x] Four phone screenshots, no real coordinates (`store/graphics/`). Three are from the release
+      build; the Scan one is from the debug build with demo entries and scanning on.
+      Tablet and desktop screenshots skipped (optional).
+- [x] Short and full descriptions entered in Play Console, including that ResQ is not a
       replacement for emergency services.
-- [ ] App content forms: privacy policy URL, ads (none), target audience (18+),
-      content rating, data safety (precise location and messages shared with
-      nearby users, **not encrypted in transit**), foreground service declarations
-      (`connectedDevice`, `location`) with a demo video.
-- [ ] Closed test: 12 testers opted in for 14 days (personal account).
-- [ ] Decide the Play contact email (currently askdeskbyjkl@gmail.com).
+- [x] App content forms: privacy policy URL, ads none, no sign-in, target audience 18+,
+      content rating (Teen / PEGI 12... as given by the questionnaire), data safety (location and
+      messages collected and shared, not encrypted), Advertising ID No, government, financial and
+      health apps none, category Tools, AI assets "Don't label".
+- [x] Foreground service declarations (`connectedDevice`, `location`) with an unlisted YouTube
+      demo video (answers entered in Play Console).
+- [x] Play contact email: askdeskbyjkl@gmail.com (shown publicly).
+- [x] Closed test release (1.0.0, `versionCode 2`) submitted for review on 22 November 2026.
+- [ ] Google approves it and the join link appears.
+- [ ] 12 testers opted in for 14 days (personal account), then apply for production.
 - [ ] Move [CHANGELOG.md](CHANGELOG.md) "Unreleased" under a dated `1.0.0`
-      heading, build the `.aab`, tag `v1.0.0`.
+      heading (it is out of date, refresh it first), tag `v1.0.0`.
 
 ---
 
@@ -441,6 +460,10 @@ and reserved flag bits set up in v1.0.0).
       `EchoRule` (4 tests), echo fields in the session state, a send-job listener and
       the green line. Test: phone A sends, phone B scans and relays, A shows the line.
 
+- [ ] Notification while scanning right after Stop: the "Telling nearby phones you stopped"
+      title wins for 60 seconds even if scanning is on. Use one combined title.
+- [ ] Upload native debug symbols with the bundle (Play warns without them).
+- [ ] A tablet layout, if tablets matter (tablet screenshots were skipped).
 - [ ] Resume broadcasting after the phone reboots (`BOOT_COMPLETED` receiver, on
       top of the saved SOS state from v1.0.0). Limits: it only runs once the phone
       is unlocked, it cannot read a fresh GPS fix from the background without
@@ -557,11 +580,18 @@ years. These rules keep old and new phones able to see each other:
 - Help text: a first-launch screen, a "How ResQ works" page in Settings, and
   one-line hints on empty screens. Nothing permanent on the Send screen.
 - Review decisions: marker `A1`, new sender ID at every Start, Clear all with
-  confirmation, own echo shown on the Send screen, cancel shown as unverified, no
-  checksum.
+  confirmation, cancel shown as unverified, no checksum. (The own-echo line on the
+  Send screen moved to v1.1.0.)
 - Encryption: not in v1.0.0, with clear in-app and store disclosure instead.
 - Quick-phrase chips show only while the message box is focused, in a strip
   pinned above the keyboard.
 - The app draws edge-to-edge on every Android version, so keyboard handling is
   the same everywhere.
-- Hop count is only a safety fuse. Receivers see Nearby or Relayed.
+- Hop count is only a safety fuse. Receivers see Nearby or "relayed ×N".
+- Public id is `com.jasonkyawlab.resq` (debug `.debug`); the code keeps `com.resq.app`.
+  It can never change after the first upload.
+- Store: category Tools, audience 18+, all countries for the closed test, screenshots from
+  the release app (one debug exception, see above), contact email askdeskbyjkl@gmail.com.
+- Hourly was removed from the send choices (Battery saver already forces hourly). Received
+  entries are kept 72 hours. Automatic protection is off.
+- Demo videos go on the YouTube channel "jasonkyawlab", one playlist per app, set to Unlisted.

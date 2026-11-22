@@ -8,61 +8,44 @@ scheme used for each release.
 
 ## [Unreleased]
 
-Everything below is pre-launch work on the way to the first Play Store
-submission (versionCode 1, versionName 1.0.0). Move this section's
-content under a new dated `## [1.0.0] - YYYY-MM-DD` heading the day
-that build is actually published.
+Work on the way to the first Play Store release (versionName 1.0.0; the closed
+test is versionCode 2). On the day 1.0.0 is published, put this content under a
+dated `## [1.0.0] - YYYY-MM-DD` heading.
 
 ### Added
-- Sender screen: editable SOS message, GPS auto-attached per broadcast
-  cycle, Start/Stop toggle, live status (broadcasting/idle, send
-  frequency, last coordinate, last sent, battery).
-- Receiver screen: live log of nearby SOS beacons (sender ID, message,
-  coordinates, signal strength, last-seen time), with automatic
-  multi-hop relay while scanning.
-- Settings screen: send-frequency picker, battery saver (forces the
-  longest interval), per-permission status (Bluetooth adapter/scan/
-  advertise/connect, location permission/services, notifications) with
-  inline fix actions, sender ID display.
-- Offline-only BLE mesh: a compact always-on advertisement carries
-  sender ID + GPS to any scanner with zero connection required; a GATT
-  pull fetches the full message when available. No Play Services
-  dependency, no network permission anywhere in the app.
-- Release signing and `.aab` build pipeline, opt-in via a gitignored
-  `keystore.properties`.
-- Custom SOS-morse-mark launcher icon and in-app logo mark.
-- Privacy policy covering the app's on-device-only data handling, hosted at
-  https://resq-privacy.pages.dev.
-- "My location" setting (room / floor / building): saved once, sent ahead
-  of every SOS message so it still goes out when the user can barely type.
-- Quick-phrase chips (Trapped, Injured, Need medical help, ...) in a strip
-  above the keyboard while typing the message.
-- Live byte counter on the message box and a hard cap at the 180-byte
-  broadcast limit; truncation never splits a character or emoji.
-- Copy button for an SOS entry's coordinates on the Scan screen.
+- Send screen: editable SOS message (180-byte cap with live counter), preset
+  cards after Start, quick-phrase chips, "My location" line, Start/Stop, live
+  status (send frequency, last position, last sent, battery).
+- Scan screen: live list of nearby SOS with stages (Live, Signal lost, Marked
+  safe, Archived), position age, signal strength, hop count, Copy coordinates,
+  Dismiss, and automatic relay of live entries.
+- Settings: send frequency, battery saver, permission and radio status with fix
+  actions, battery-optimisation row, Clear all received SOS, "How ResQ works".
+- First-launch screen and guide, shown once.
+- Offline BLE mesh: a 17-byte beacon (marker, version, sender ID, position,
+  flags, hop, update counter) plus a GATT record with extras (position time,
+  SOS started, interval). No internet permission, no Play Services.
+- New sender ID at every Start; Start within 30 minutes of Stop continues the
+  same SOS. "Cancelled" beacon on Stop, shown as "Marked safe (unverified)".
+- Resume of a running SOS or scan after the app is killed (up to 12 hours).
+- Broadcast with no GPS fix as "position unknown", with a heartbeat, and repeat
+  of the last position when GPS is lost.
+- Release signing, `.aab` build, new application id `com.jasonkyawlab.resq`.
+- Custom launcher icon and in-app logo; privacy policy at
+  https://resq-privacy.pages.dev; Play Store graphics.
+- 106 unit tests for the protocol, update rules, lifecycle and session logic.
 
 ### Changed
-- compileSdk/targetSdk raised from 35 to 36: Google Play requires new
-  apps and updates to target Android 16 (API 36) from Aug 31, 2026.
+- compileSdk/targetSdk 36 (Google Play requirement from 31 Aug 2026).
+- Tabs switch instantly with a plain state switch; the navigation library was
+  removed.
+- Hourly removed from the send choices (Battery saver already forces hourly).
 
 ### Fixed
-- Message box felt stuck: typing round-tripped through storage and lagged,
-  and the keyboard could squash the screen on older Android versions (the
-  app now draws edge-to-edge everywhere).
-- Scan card ran the coordinates and time together on large system fonts;
-  now stacked, and "Seen" is clearer as "Last heard".
-- Crash when stopping the foreground service on Android 6.0 (API 23):
-  `stopForeground(int)` only exists from API 24; now uses
-  `ServiceCompat.stopForeground`. Found by release lint (NewApi).
-- Settings screen overflow that made the Permissions section
-  unreachable once it grew past screen height.
-- Permission-row buttons clipping off-screen on long labels.
-- Bluetooth/location/permission status going stale until a full
-  navigate-away-and-back, instead of updating live when toggled from
-  Quick Settings or the system Settings app.
-- Send loop waiting out the full user-configured interval (up to an
-  hour) after a failed GPS fix instead of retrying promptly once
-  permission/Bluetooth/location changed, or on a short backoff while
-  no fix has ever been obtained.
-- Location fetch only ever trying one provider (GPS or network, never
-  both), missing a usable fix when the first one was slow or disabled.
+- Relayed SOS that kept appearing live after the sender stopped ("zombie"
+  relay): only a new counter or a direct hearing refreshes the live clock.
+- Crash in the location listener on Android 10 and below.
+- Crash stopping the foreground service on Android 6 (`stopForeground`).
+- Message box lag and keyboard layout; Scan card layout on large fonts;
+  Settings overflow; stale Bluetooth/location status; send loop waiting out the
+  full interval after a failed fix; location fetch trying only one provider.

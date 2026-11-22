@@ -26,14 +26,22 @@ Store update.
 
 ## How the mesh works
 
-Every beacon is a small (16-byte) BLE advertisement containing a
-sender ID, a fixed-point GPS coordinate, and a flag telling scanners
+Every beacon is a small (17-byte) BLE advertisement containing a
+marker and version, a sender ID (new at every Start), a fixed-point GPS
+coordinate, flags, a hop count and an update counter. A flag tells scanners
 whether a fuller free-text message is available. Any phone scanning
 sees that location *without connecting to anything* — advertisements
 are the one thing on BLE that reaches every nearby device, broadcast
 or not. If the flag says a message is available, a scanner opportunistically
 connects over GATT and reads the full `SosRecord` (message, exact
-coordinates, battery, hop count).
+coordinates, battery, hop count, plus extras such as position time and
+send interval). The full format is in [ROADMAP.md](ROADMAP.md); it is frozen for
+v1.0.0, so only add to it.
+
+Received SOS entries move through Live, Signal lost, Marked safe and Archived,
+are kept 72 hours, and only live ones are relayed. A sender that stops sends a
+"cancelled" beacon for a minute; a Start within 30 minutes of Stop continues
+the same SOS. An SOS or scan that was running is resumed after the app is killed.
 
 Every phone that's scanning also **relays**: it keeps the freshest
 sighting it's heard from someone else and periodically re-advertises
@@ -65,7 +73,8 @@ app/src/main/java/com/resq/app/
 │   └── util/                   # Logger (compiles out in release builds)
 └── ui/
     ├── theme/                  # Pure OLED-black Compose theme
-    ├── navigation/              # 3-tab NavHost
+    ├── navigation/              # 3-tab state switch (no navigation library)
+    ├── guide/                  # First-launch screen and "How ResQ works"
     ├── components/               # Shared composables (toggle button, status/action
     │                             # banners, AppMark logo, badges)
     ├── sender/, receiver/, settings/   # One screen + ViewModel + UiState per package
@@ -78,18 +87,17 @@ branding/                     # Non-build preview copies of the launcher icon/ma
 ```
 
 **Adding a fourth screen**: add a package under `ui/`, a `ResQDestination`
-entry, and a `composable(...)` block in `ResQNavHost`. Nothing else
-needs to change — routing, theming and DI are all already generic.
+entry, and a branch in `ResQNavHost`. Nothing else needs to change.
 
-**Changing the wire protocol**: bump `PROTOCOL_VERSION` in
-`core/ble/BlePayload.kt`, add a new `encodeVX`/`decodeVX` branch, and
-leave the old version decodable so mixed-version devices on the same
-mesh don't silently drop each other. The codec already returns `null`
-(not a crash) on an unrecognised version.
+**Changing the wire protocol**: follow the "Format rules" in
+[ROADMAP.md](ROADMAP.md): add record extras or reserved flag bits rather than
+changing anything. Only bump `PROTOCOL_VERSION` in `core/ble/BlePayload.kt`
+when nothing else works, and keep older versions decodable. The codec returns
+`null` (not a crash) on an unknown marker or version.
 
 ## Technical decisions
 
-- **minSdk 23 / targetSdk 35** — BLE central+peripheral roles and the
+- **minSdk 23 / targetSdk 36** — BLE central+peripheral roles and the
   modern permission model are reliable from API 23 on; API 18-22 would
   add real complexity for devices that are a rounding error of current
   installs.
@@ -132,7 +140,7 @@ mesh don't silently drop each other. The codec already returns `null`
 ## Versioning
 
 Two separate fields in `app/build.gradle.kts`, both bumped on every
-release:
+release (the closed test is `versionCode 2`, `versionName 1.0.0`):
 
 - `versionCode` — an integer Google Play uses internally; must
   strictly increase on every upload. Just `+1` every time, no encoded
@@ -141,6 +149,9 @@ release:
   [semver](https://semver.org/): patch for bug-fix-only releases,
   minor for backward-compatible features, major for breaking/large
   changes (e.g. the v2 chat feature below).
+
+The public application id is `com.jasonkyawlab.resq` (debug `.debug`); the code
+keeps `com.resq.app` packages. It cannot change after the first Play upload.
 
 Tag the release commit to match (`git tag v1.1.0`) so any build on
 Play Store traces back to an exact commit, and record what shipped in
@@ -152,6 +163,7 @@ Requires a local Android SDK (`local.properties` with `sdk.dir=...`,
 not committed) and JDK 17.
 
 ```bash
+./gradlew test               # unit tests (106, no phone needed)
 ./gradlew assembleDebug      # debug APK
 ./gradlew assembleRelease    # minified + resource-shrunk release APK (unsigned until you set up signing)
 ./gradlew bundleRelease      # the .aab Play Store actually wants
@@ -159,8 +171,8 @@ not committed) and JDK 17.
 
 ## Play Store release signing
 
-Release builds are unsigned until a `keystore.properties` file exists
-at the project root — see `keystore.properties.example` for the exact
+Play App Signing is on; builds are signed with an upload key. Release builds
+are unsigned until a `keystore.properties` file exists at the project root — see `keystore.properties.example` for the exact
 `keytool` command and the fields to fill in. That file (and the `.jks`
 it points to) are gitignored; once it's in place, `bundleRelease`
 signs automatically with zero code changes. Keep the `.jks` and its
@@ -177,12 +189,16 @@ local Bluetooth broadcast to other nearby devices running ResQ. That URL
 is what goes into Play Console. If the policy changes, edit that file and
 upload it again to the same Pages project; the URL stays the same.
 
+## Store assets
+
+`store/graphics/` holds the icon, feature graphic, screenshots and the demo-video
+thumbnail used in Play Console. `store/privacy/` is the privacy policy page. The
+store text itself is kept in Play Console, not in the repo.
+
 ## Roadmap
 
-What is decided for v1, planned for v1.1 and v2, and the known limits
-are tracked in [ROADMAP.md](ROADMAP.md). The headline v2 feature is
-two-way chat between a sender and a specific helper, matched by a
-`check_id` per SOS session. That needs bidirectional BLE messaging and
-session-matching logic that is substantial enough to scope once v1's
-broadcast/relay path is proven in the field; see `ResQForegroundService`'s
-class doc for where the relay loop would need to grow to support it.
+Status, the Bluetooth format, what is decided for v1.0.0, planned for v1.1 and
+v2, and the known limits are in [ROADMAP.md](ROADMAP.md). The headline v2 feature
+is two-way chat between a sender and a specific helper, matched by a `check_id`
+per SOS session; it needs bidirectional BLE messaging, so it waits until the
+broadcast and relay path is proven in the field.
