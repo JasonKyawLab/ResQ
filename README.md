@@ -2,6 +2,13 @@
 
 <img src="branding/icon-preview.svg" width="96" height="96" alt="ResQ logo — an SOS morse mark in red on black">
 
+![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material3-4285F4?logo=jetpackcompose&logoColor=white)
+![Android](https://img.shields.io/badge/Android-6.0%2B%20(API%2023)-3DDC84?logo=android&logoColor=white)
+![Bluetooth LE](https://img.shields.io/badge/Bluetooth-LE%20mesh-0082FC?logo=bluetooth&logoColor=white)
+![Room](https://img.shields.io/badge/Room-2.6-4285F4?logo=android&logoColor=white)
+![Offline](https://img.shields.io/badge/Internet-none-red)
+
 Offline-only Bluetooth emergency beacon for Android. No internet permission,
 no backend, no account. A phone broadcasts its location over Bluetooth Low
 Energy, nearby phones running ResQ see it, and every phone in range relays it
@@ -68,7 +75,3 @@ repo.
 
 - [Privacy policy](https://resq-privacy.pages.dev) (source in `store/privacy/`)
 - [Roadmap](ROADMAP.md), [Changelog](CHANGELOG.md)
-
-## License
-
-[MIT](LICENSE)
