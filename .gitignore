@@ -15,3 +15,10 @@ app/release/
 keystore.properties
 *.jks
 *.keystore
+
+# Build outputs and tool folders
+*.apk
+*.aab
+*.hprof
+.claude/
+/.kotlin/

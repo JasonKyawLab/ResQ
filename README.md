@@ -68,3 +68,7 @@ repo.
 
 - [Privacy policy](https://resq-privacy.pages.dev) (source in `store/privacy/`)
 - [Roadmap](ROADMAP.md), [Changelog](CHANGELOG.md)
+
+## License
+
+[MIT](LICENSE)
